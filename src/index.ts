@@ -8,6 +8,7 @@ import errorHandler from "./middleware/errorHandler";
 import catchErrors from "./utils/catchErrors";
 import { OK } from "./constants/http";
 import authRoutes from "./routes/auth.route";
+import referralRoutes from "./routes/referrals.route";
 
 //Application Middlewares
 const app = express();
@@ -38,6 +39,7 @@ app.get("/", (request:Request, response:Response, next:NextFunction)=> {
     // }
 
 app.use("/auth", authRoutes)
+app.use("/referrals", referralRoutes)
 
 //Error Handler Middleware
 app.use(errorHandler);
