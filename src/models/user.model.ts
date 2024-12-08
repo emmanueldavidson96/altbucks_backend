@@ -5,6 +5,7 @@ export interface UserDocument extends mongoose.Document {
     email:string,
     password:string,
     verified:boolean,
+    referralCode:string,
     createdAt:Date,
     updatedAt:Date,
     __v?:number,
@@ -22,6 +23,10 @@ const userSchema = new mongoose.Schema<UserDocument>({
         type:String,
         unique:true,
         required:true,
+    },
+    referralCode:{
+        type:String,
+        unique:true,
     },
     verified:{
         type:Boolean,
@@ -42,6 +47,13 @@ userSchema.pre("save", async function (next){
     this.password = await hashValue(this.password);
     next();
 })
+
+userSchema.pre("save", async function (next) {
+    if (!this.referralCode) {
+        this.referralCode = crypto.randomUUID();
+    }
+    next();
+});
 
 userSchema.methods.comparePassword = async function (val: string ){
     return compareValue(val, this.password);
