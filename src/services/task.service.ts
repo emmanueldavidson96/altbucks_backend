@@ -1,90 +1,68 @@
 import { Task, ITask } from '../models/task.model';
 
 export class TaskService {
-    static async getTasks(filters: {
-        category?: string;
-        payment?: { min?: number; max?: number };
+    static async createTask(data: Partial<ITask>) {
+        return await Task.create(data);
+    }
+
+    static async getRecentTasks(limit = 10) {
+        return await Task.find({ status: 'Open' })
+            .sort({ postedDate: -1 })
+            .limit(limit);
+    }
+
+    static async getFilteredTasks(filters: {
         datePosted?: string;
         skills?: string[];
+        compensation?: { min?: number; max?: number };
     }) {
-        try {
-            const query: any = {};
+        const query: any = { status: 'Open' };
 
-            if (filters.category) {
-                query.category = filters.category;
+        if (filters.datePosted) {
+            const date = new Date();
+            switch (filters.datePosted) {
+                case 'past24hours':
+                    date.setDate(date.getDate() - 1);
+                    break;
+                case 'pastweek':
+                    date.setDate(date.getDate() - 7);
+                    break;
+                case 'pastmonth':
+                    date.setMonth(date.getMonth() - 1);
+                    break;
             }
-
-            if (filters.skills?.length) {
-                query.skillsRequired = { $in: filters.skills };
-            }
-
-            if (filters.payment) {
-                query['payment.amount'] = {};
-                if (filters.payment.min) {
-                    query['payment.amount'].$gte = filters.payment.min;
-                }
-                if (filters.payment.max) {
-                    query['payment.amount'].$lte = filters.payment.max;
-                }
-            }
-
-            if (filters.datePosted) {
-                const date = new Date();
-                switch (filters.datePosted) {
-                    case 'today':
-                        date.setHours(0, 0, 0, 0);
-                        break;
-                    case 'week':
-                        date.setDate(date.getDate() - 7);
-                        break;
-                    case 'month':
-                        date.setMonth(date.getMonth() - 1);
-                        break;
-                }
-                query.postedDate = { $gte: date };
-            }
-
-            const tasks = await Task.find(query)
-                .sort({ postedDate: -1 })
-                .select('title description category payment postedDate deadline applicationsCount');
-
-            return tasks;
-        } catch (err: any) {
-            throw new Error(`Failed to fetch tasks: ${err.message}`);
+            query.postedDate = { $gte: date };
         }
+
+        if (filters.skills?.length) {
+            query.taskType = { $in: filters.skills };
+        }
+
+        if (filters.compensation) {
+            if (filters.compensation.min) {
+                query['compensation.amount'] = { $gte: filters.compensation.min };
+            }
+            if (filters.compensation.max) {
+                query['compensation.amount'] = {
+                    ...query['compensation.amount'],
+                    $lte: filters.compensation.max
+                };
+            }
+        }
+
+        return await Task.find(query).sort({ postedDate: -1 });
     }
 
-    static async getTaskById(taskId: string) {
-        try {
-            const task = await Task.findById(taskId);
-            if (!task) throw new Error('Task not found');
-            return task;
-        } catch (err: any) {
-            throw new Error(`Failed to fetch task: ${err.message}`);
-        }
+    static async searchTasks(query: string) {
+        return await Task.find({
+            $or: [
+                { title: { $regex: query, $options: 'i' } },
+                { description: { $regex: query, $options: 'i' } }
+            ]
+        }).sort({ postedDate: -1 });
     }
 
-    static async getTaskCategories() {
-        try {
-            const categories = await Task.distinct('category');
-            return categories;
-        } catch (err: any) {
-            throw new Error(`Failed to fetch categories: ${err.message}`);
-        }
-    }
-
-    static async searchTasks(searchTerm: string) {
-        try {
-            const tasks = await Task.find({
-                $or: [
-                    { title: { $regex: searchTerm, $options: 'i' } },
-                    { description: { $regex: searchTerm, $options: 'i' } }
-                ]
-            }).sort({ postedDate: -1 });
-
-            return tasks;
-        } catch (err: any) {
-            throw new Error(`Search failed: ${err.message}`);
-        }
+    static async getTaskById(id: string) {
+        return await Task.findById(id);
     }
 }

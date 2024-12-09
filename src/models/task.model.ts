@@ -1,98 +1,55 @@
 import { Schema, model, Document } from 'mongoose';
 
-// Task interface for TypeScript type checking
 export interface ITask extends Document {
     title: string;
+    taskType: string;
     description: string;
-    category: 'Design' | 'Development' | 'Writing' | 'Review';
-    payment: {
+    requirements: string;
+    location?: string;
+    compensation: {
         amount: number;
         currency: string;
     };
     deadline: Date;
-    postedDate: Date;
-    requirements: string[];
-    skillsRequired: string[];
-    experienceLevel: 'Entry' | 'Intermediate' | 'Expert';
+    maxRespondents: number;
+    attachments?: {
+        files: [{
+            url: string;
+            type: string;
+            size: number;
+        }];
+        links: string[];
+    };
     status: 'Open' | 'In Progress' | 'Completed';
-    applicationsCount: number;
+    postedDate: Date;
 }
 
-// Task Schema
 const TaskSchema = new Schema<ITask>({
-    title: {
-        type: String,
-        required: [true, 'Title is required'],
-        trim: true,
-        maxLength: [100, 'Title cannot be more than 100 characters']
+    title: { type: String, required: true },
+    taskType: { type: String, required: true },
+    description: { type: String, required: true },
+    requirements: { type: String, required: true },
+    location: String,
+    compensation: {
+        amount: { type: Number, required: true },
+        currency: { type: String, default: 'USD' }
     },
-    description: {
-        type: String,
-        required: [true, 'Description is required'],
-        trim: true
-    },
-    category: {
-        type: String,
-        required: [true, 'Category is required'],
-        enum: ['Design', 'Development', 'Writing', 'Review']
-    },
-    payment: {
-        amount: {
-            type: Number,
-            required: [true, 'Payment amount is required'],
-            min: [0, 'Payment cannot be negative']
-        },
-        currency: {
+    deadline: { type: Date, required: true },
+    maxRespondents: { type: Number, required: true },
+    attachments: {
+        files: [{
+            url: String,
             type: String,
-            default: 'USD'
-        }
-    },
-    deadline: {
-        type: Date,
-        required: [true, 'Deadline is required']
-    },
-    postedDate: {
-        type: Date,
-        default: Date.now
-    },
-    requirements: [{
-        type: String,
-        trim: true
-    }],
-    skillsRequired: [{
-        type: String,
-        trim: true
-    }],
-    experienceLevel: {
-        type: String,
-        enum: ['Entry', 'Intermediate', 'Expert'],
-        required: true
+            size: Number
+        }],
+        links: [String]
     },
     status: {
         type: String,
         enum: ['Open', 'In Progress', 'Completed'],
         default: 'Open'
     },
-    applicationsCount: {
-        type: Number,
-        default: 0
-    }
-}, {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-});
-
-// Indexes for efficient querying
-TaskSchema.index({ category: 1 });
-TaskSchema.index({ 'payment.amount': 1 });
-TaskSchema.index({ postedDate: -1 });
-TaskSchema.index({ status: 1 });
-TaskSchema.index({ applicationsCount: 1 });
-
-// Virtual field for time since posting
-TaskSchema.virtual('timePosted').get(function() {
-    return new Date().getTime() - this.postedDate.getTime();
+    postedDate: { type: Date, default: Date.now }
 });
 
 export const Task = model<ITask>('Task', TaskSchema);

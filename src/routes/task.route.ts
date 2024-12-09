@@ -1,13 +1,13 @@
-import { Router } from "express";
-import { TaskController } from "../controllers/task.controller";
-import catchErrors from "../utils/catchErrors";
+import { Router } from 'express';
+import { TaskController } from '../controllers/task.controller';
+import catchErrors from '../utils/catchErrors';
 
-const taskRoutes = Router();
+const router = Router();
 
-// prefix: /tasks
-taskRoutes.get("/", catchErrors(TaskController.getTasks));
-taskRoutes.get("/categories", catchErrors(TaskController.getTaskCategories));
-taskRoutes.get("/search", catchErrors(TaskController.searchTasks));
-taskRoutes.get("/:taskId", catchErrors(TaskController.getTaskById));  // Changed from getTask to getTaskById
+router.post('/', catchErrors(TaskController.createTask));
+router.get('/recent', catchErrors(TaskController.getRecentTasks));
+router.get('/filter', catchErrors(TaskController.getFilteredTasks));
+router.get('/search', catchErrors(TaskController.searchTasks));
+router.get('/:id', catchErrors(TaskController.getTaskById));
 
-export default taskRoutes;
+export default router;
