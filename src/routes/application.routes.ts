@@ -1,11 +1,23 @@
+// src/routes/application.routes.ts
+
 import { Router } from 'express';
 import { ApplicationController } from '../controllers/application.controller';
-import catchErrors from '../utils/catchErrors';
 
 const router = Router();
 
-router.post('/', catchErrors(ApplicationController.submitApplication));
-router.get('/user', catchErrors(ApplicationController.getUserApplications));
-router.patch('/:id/status', catchErrors(ApplicationController.updateApplicationStatus));
+// Get user's applications
+router.get('/user/:userId', ApplicationController.getUserApplications);
+
+// Create new application
+router.post('/', ApplicationController.createApplication);
+
+// Update application status
+router.patch('/:id/status', ApplicationController.updateApplicationStatus);
+
+// Get user's applications by status
+router.get('/user/:userId/status/:status', ApplicationController.getUserApplicationsByStatus);
+
+// Get user's upcoming deadlines
+router.get('/user/:userId/upcoming', ApplicationController.getUserUpcomingDeadlines);
 
 export default router;

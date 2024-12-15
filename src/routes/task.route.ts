@@ -1,13 +1,17 @@
 import { Router } from 'express';
 import { TaskController } from '../controllers/task.controller';
-import catchErrors from '../utils/catchErrors';
 
+// Initialize router
 const router = Router();
 
-router.post('/', catchErrors(TaskController.createTask));
-router.get('/recent', catchErrors(TaskController.getRecentTasks));
-router.get('/filter', catchErrors(TaskController.getFilteredTasks));
-router.get('/search', catchErrors(TaskController.searchTasks));
-router.get('/:id', catchErrors(TaskController.getTaskById));
+// Task management routes
+router.post('/', TaskController.createTask);
+router.get('/', TaskController.getAllTasks);
+router.get('/recent', TaskController.getRecentTasks);
+router.get('/search', TaskController.searchTasks);
+router.get('/status/:status', TaskController.getTasksByStatus);
+router.get('/upcoming', TaskController.getUpcomingDeadlines);
+router.get('/:id', TaskController.getTaskById);
+router.patch('/:id/status', TaskController.updateTaskStatus);
 
 export default router;

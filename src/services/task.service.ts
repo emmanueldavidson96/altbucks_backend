@@ -1,68 +1,129 @@
 import { Task, ITask } from '../models/task.model';
 
 export class TaskService {
-    static async createTask(data: Partial<ITask>) {
-        return await Task.create(data);
+    // Creates new task with default 'Open' status
+    static async createTask(taskData: Partial<ITask>) {
+        const task = await Task.create({
+            ...taskData,
+            status: 'Open',
+            postedDate: new Date()
+        });
+        return task;
     }
 
-    static async getRecentTasks(limit = 10) {
+    // Fetches paginated tasks with metadata
+    static async getAllTasks(page = 1, limit = 10) {
+        const skip = (page - 1) * limit;
+
+        const tasks = await Task.find()
+            .sort({ postedDate: -1 })  // Latest first
+            .skip(skip)
+            .limit(limit);
+
+        const total = await Task.countDocuments();
+
+        return {
+            tasks,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(total / limit),
+                totalTasks: total,
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            }
+        };
+    }
+
+    // Gets recent open tasks for quick access
+    static async getRecentTasks(limit = 5) {
         return await Task.find({ status: 'Open' })
             .sort({ postedDate: -1 })
             .limit(limit);
     }
 
-    static async getFilteredTasks(filters: {
-        datePosted?: string;
-        skills?: string[];
-        compensation?: { min?: number; max?: number };
-    }) {
-        const query: any = { status: 'Open' };
-
-        if (filters.datePosted) {
-            const date = new Date();
-            switch (filters.datePosted) {
-                case 'past24hours':
-                    date.setDate(date.getDate() - 1);
-                    break;
-                case 'pastweek':
-                    date.setDate(date.getDate() - 7);
-                    break;
-                case 'pastmonth':
-                    date.setMonth(date.getMonth() - 1);
-                    break;
-            }
-            query.postedDate = { $gte: date };
+    // Finds specific task by ID
+    static async getTaskById(taskId: string) {
+        const task = await Task.findById(taskId);
+        if (!task) {
+            throw new Error('Task not found');
         }
-
-        if (filters.skills?.length) {
-            query.taskType = { $in: filters.skills };
-        }
-
-        if (filters.compensation) {
-            if (filters.compensation.min) {
-                query['compensation.amount'] = { $gte: filters.compensation.min };
-            }
-            if (filters.compensation.max) {
-                query['compensation.amount'] = {
-                    ...query['compensation.amount'],
-                    $lte: filters.compensation.max
-                };
-            }
-        }
-
-        return await Task.find(query).sort({ postedDate: -1 });
+        return task;
     }
 
-    static async searchTasks(query: string) {
-        return await Task.find({
-            $or: [
+    // Searches tasks based on various filters
+    static async searchTasks(searchParams: {
+        query?: string,
+        taskType?: string,
+        minAmount?: number,
+        maxAmount?: number,
+        location?: string,
+        status?: string
+    }) {
+        const { query, taskType, minAmount, maxAmount, location, status } = searchParams;
+
+        const filterQuery: any = {};
+
+        // Add text search filters
+        if (query) {
+            filterQuery.$or = [
                 { title: { $regex: query, $options: 'i' } },
                 { description: { $regex: query, $options: 'i' } }
-            ]
-        }).sort({ postedDate: -1 });
+            ];
+        }
+
+        // Add optional filters if provided
+        if (taskType) filterQuery.taskType = taskType;
+        if (location) filterQuery.location = location;
+        if (status) filterQuery.status = status;
+
+        // Add compensation range filter
+        if (minAmount || maxAmount) {
+            filterQuery['compensation.amount'] = {};
+            if (minAmount) filterQuery['compensation.amount'].$gte = minAmount;
+            if (maxAmount) filterQuery['compensation.amount'].$lte = maxAmount;
+        }
+
+        return await Task.find(filterQuery)
+            .sort({ postedDate: -1 });
     }
 
-    static async getTaskById(id: string) {
-        return await Task.findById(id);
+    // Updates task status with validation
+    static async updateTaskStatus(taskId: string, status: 'Open' | 'In Progress' | 'Completed') {
+        const validStatuses = ['Open', 'In Progress', 'Completed'];
+        if (!validStatuses.includes(status)) {
+            throw new Error('Invalid status provided');
+        }
+
+        const task = await Task.findByIdAndUpdate(
+            taskId,
+            { status },
+            { new: true, runValidators: true }
+        );
+
+        if (!task) {
+            throw new Error('Task not found');
+        }
+
+        return task;
+    }
+
+    // Gets tasks filtered by status
+    static async getTasksByStatus(status: string) {
+        return await Task.find({ status })
+            .sort({ postedDate: -1 });
+    }
+
+    // Finds tasks due within specified days
+    static async getUpcomingDeadlines(days = 7) {
+        const dateThreshold = new Date();
+        dateThreshold.setDate(dateThreshold.getDate() + days);
+
+        return await Task.find({
+            status: 'Open',
+            deadline: {
+                $gte: new Date(),
+                $lte: dateThreshold
+            }
+        }).sort({ deadline: 1 });
     }
 }
