@@ -31,6 +31,8 @@ const errorHandler:ErrorRequestHandler = (error:any, request:Request, response:R
         return handleAppError(response, error)
     }
     response.status(INTERNAL_SERVER_ERROR).send("Internal Server Error")
+    //      // For all other errors, return a generic 500 Internal Server Error
+    // response.status(INTERNAL_SERVER_ERROR).json({ message: error.message || "Internal Server Error" });
 }
 
 export default errorHandler;

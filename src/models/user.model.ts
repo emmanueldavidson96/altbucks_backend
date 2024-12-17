@@ -8,6 +8,7 @@ export interface UserDocument extends mongoose.Document {
     createdAt:Date,
     updatedAt:Date,
     __v?:number,
+    wallet?: mongoose.Types.ObjectId,
     comparePassword(val:string):Promise<boolean>;
     omitPassword(): Pick<UserDocument, "_id" | "email" | "verified" | "createdAt" | "updatedAt" | "__v">
 }
@@ -27,7 +28,13 @@ const userSchema = new mongoose.Schema<UserDocument>({
         type:Boolean,
         required:true,
         default:false
-    }
+    },
+    // Reference to the Wallet model (one-to-one relationship)
+    wallet:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Wallet",
+        required: true,
+    },
 
 },{
     timestamps:true,
