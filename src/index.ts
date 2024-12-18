@@ -8,6 +8,9 @@ import errorHandler from "./middleware/errorHandler";
 import catchErrors from "./utils/catchErrors";
 import { OK } from "./constants/http";
 import authRoutes from "./routes/auth.route";
+import walletRoute from "./routes/wallet.route"
+import taskRoute from "./routes/task.route"
+import  cardRoute from "./routes/card.route"
 
 //Application Middlewares
 const app = express();
@@ -38,6 +41,9 @@ app.get("/", (request:Request, response:Response, next:NextFunction)=> {
     // }
 
 app.use("/auth", authRoutes)
+app.use("/api/wallet" , walletRoute)
+app.use("/api/task" , taskRoute)
+app.use("/api/card" , cardRoute)
 
 //Error Handler Middleware
 app.use(errorHandler);
