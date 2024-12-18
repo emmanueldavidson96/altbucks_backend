@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { getWalletSummary } from '../controllers/wallet.controller';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { fetchWalletSummary } from '../controllers/wallet.controller';
 
 const router = Router();
 
-router.get('/summary', authMiddleware, getWalletSummary);
+router.get('/:userId', fetchWalletSummary);
 
 export default router;
