@@ -9,7 +9,6 @@ import cookieParser from "cookie-parser";
 import errorHandler from "./middleware/errorHandler";
 import authRoutes from "./routes/auth.route";
 import taskRoutes from "./routes/task.route";
-import applicationRoutes from "./routes/application.routes";  // Add this import
 
 const app = express();
 
@@ -31,7 +30,7 @@ app.get("/", (request: Request, response: Response, next: NextFunction) => {
 
 app.use("/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
-app.use("/api/applications", applicationRoutes);
+
 
 // Error Handler
 app.use(errorHandler);
