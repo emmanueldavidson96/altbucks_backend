@@ -35,7 +35,7 @@ export class TaskService {
     }
 
     // Gets recent open tasks for quick access
-    static async getRecentTasks(limit = 5) {
+    static async getRecentTasks(limit = 15) {
         return await Task.find({ status: 'Open' })
             .sort({ postedDate: -1 })
             .limit(limit);
