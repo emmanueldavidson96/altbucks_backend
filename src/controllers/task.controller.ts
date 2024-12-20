@@ -41,7 +41,7 @@ export class TaskController {
     // Get recent tasks
     static async getRecentTasks(req: Request, res: Response) {
         try {
-            const limit = parseInt(req.query.limit as string) || 5;
+            const limit = parseInt(req.query.limit as string) || 8;
             const tasks = await TaskService.getRecentTasks(limit);
             res.status(200).json({
                 success: true,
@@ -138,4 +138,54 @@ export class TaskController {
             });
         }
     }
+
+
+    // Mark task as complete
+    static async markTaskComplete(req: Request, res: Response) {
+        try {
+            const task = await TaskService.markTaskAsComplete(req.params.id);
+            res.status(200).json({
+                success: true,
+                data: task
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
+    // Mark task as pending
+    static async markTaskPending(req: Request, res: Response) {
+        try {
+            const task = await TaskService.markTaskAsPending(req.params.id);
+            res.status(200).json({
+                success: true,
+                data: task
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
+    // Delete task
+    static async deleteTask(req: Request, res: Response) {
+        try {
+            const task = await TaskService.deleteTask(req.params.id);
+            res.status(200).json({
+                success: true,
+                data: task
+            });
+        } catch (error: any) {
+            res.status(404).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
 }
+

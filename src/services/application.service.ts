@@ -1,61 +1,35 @@
-import { Application, IApplication } from '../models/application.model';
+import { Application } from '../models/application.model';
 
 export class ApplicationService {
-    // Get all applications for a specific user with task details
-    static async getUserApplications(userId: string) {
-        return await Application.find({ userId })
-            .populate('taskId', 'title description')
-            .sort({ appliedDate: -1 });
-    }
+    static async getUserCompletedApplications(userId: string) {
+        try {
+            const applications = await Application.find({
+                userId: userId,
+                status: 'Completed'
+            }).sort({ appliedOn: -1 });
 
-    // Create a new application
-    static async createApplication(applicationData: Partial<IApplication>) {
-        const application = await Application.create(applicationData);
-        return await application.populate('taskId');
-    }
-
-    // Update application status
-    static async updateStatus(applicationId: string, status: string) {
-        const validStatuses = ['Pending', 'In Progress', 'Completed'];
-
-        if (!validStatuses.includes(status)) {
-            throw new Error('Invalid status provided');
+            return applications;
+        } catch (error) {
+            console.error('Error in getUserCompletedApplications:', error);
+            throw error;
         }
+    }
 
-        const application = await Application.findByIdAndUpdate(
-            applicationId,
-            { status },
-            { new: true }
-        ).populate('taskId');
+    static async searchUserApplications(userId: string, searchTerm: string) {
+        try {
+            const applications = await Application.find({
+                userId: userId,
+                status: 'Completed',
+                $or: [
+                    { brand: { $regex: searchTerm, $options: 'i' } },
+                    { taskType: { $regex: searchTerm, $options: 'i' } }
+                ]
+            }).sort({ appliedOn: -1 });
 
-        if (!application) {
-            throw new Error('Application not found');
+            return applications;
+        } catch (error) {
+            console.error('Error in searchUserApplications:', error);
+            throw error;
         }
-
-        return application;
-    }
-
-    // Get applications by status for a user
-    static async getUserApplicationsByStatus(userId: string, status: string) {
-        return await Application.find({ userId, status })
-            .populate('taskId')
-            .sort({ appliedDate: -1 });
-    }
-
-    // Get upcoming deadlines for user's applications
-    static async getUserUpcomingDeadlines(userId: string, days = 7) {
-        const dateThreshold = new Date();
-        dateThreshold.setDate(dateThreshold.getDate() + days);
-
-        return await Application.find({
-            userId,
-            status: { $ne: 'Completed' },
-            deadline: {
-                $gte: new Date(),
-                $lte: dateThreshold
-            }
-        })
-            .populate('taskId')
-            .sort({ deadline: 1 });
     }
 }

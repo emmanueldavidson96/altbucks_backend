@@ -88,8 +88,8 @@ export class TaskService {
     }
 
     // Updates task status with validation
-    static async updateTaskStatus(taskId: string, status: 'Open' | 'In Progress' | 'Completed') {
-        const validStatuses = ['Open', 'In Progress', 'Completed'];
+    static async updateTaskStatus(taskId: string, status: 'Open' | 'In Progress' | 'Completed' | 'Pending') {
+        const validStatuses = ['Open', 'In Progress', 'Completed', 'Pending'];
         if (!validStatuses.includes(status)) {
             throw new Error('Invalid status provided');
         }
@@ -106,7 +106,6 @@ export class TaskService {
 
         return task;
     }
-
     // Gets tasks filtered by status
     static async getTasksByStatus(status: string) {
         return await Task.find({ status })
@@ -126,4 +125,47 @@ export class TaskService {
             }
         }).sort({ deadline: 1 });
     }
+
+
+    //  method for marking task as complete
+    static async markTaskAsComplete(taskId: string) {
+        const task = await Task.findByIdAndUpdate(
+            taskId,
+            { status: 'Completed' },
+            { new: true, runValidators: true }
+        );
+
+        if (!task) {
+            throw new Error('Task not found');
+        }
+
+        return task;
+    }
+
+    //  method for marking task as pending
+    static async markTaskAsPending(taskId: string) {
+        const task = await Task.findByIdAndUpdate(
+            taskId,
+            { status: 'Pending' },
+            { new: true, runValidators: true }
+        );
+
+        if (!task) {
+            throw new Error('Task not found');
+        }
+
+        return task;
+    }
+
+    // New method for deleting task
+    static async deleteTask(taskId: string) {
+        const task = await Task.findByIdAndDelete(taskId);
+
+        if (!task) {
+            throw new Error('Task not found');
+        }
+
+        return task;
+    }
+
 }

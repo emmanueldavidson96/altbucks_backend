@@ -1,56 +1,28 @@
-// src/models/application.model.ts
-
-import { Schema, model, Document, Types } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 
 export interface IApplication extends Document {
-    userId: string;  // Changed to string for testing
-    taskId: Types.ObjectId;
-    brandName: string;
-    appliedDate: Date;
-    deadline: Date;
+    userId: string;  // Change from ObjectId to string for now
+    brand: string;
+    taskType: string;
     earnings: number;
-    status: 'Pending' | 'In Progress' | 'Completed';
-    description?: string;
+    appliedOn: Date;
+    deadline: Date;
+    status: 'Completed';
+    description: string;
 }
 
 const ApplicationSchema = new Schema({
-    userId: {
-        type: String,  // Changed to String for testing
-        required: [true, 'User ID is required']
-    },
-    taskId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Task',
-        required: [true, 'Task ID is required']
-    },
-    brandName: {
-        type: String,
-        required: [true, 'Brand name is required']
-    },
-    appliedDate: {
-        type: Date,
-        default: Date.now
-    },
-    deadline: {
-        type: Date,
-        required: [true, 'Deadline is required']
-    },
-    earnings: {
-        type: Number,
-        required: [true, 'Earnings amount is required'],
-        min: [0, 'Earnings cannot be negative']
-    },
+    userId: { type: String, required: true },  // Changed from ObjectId to String
+    brand: { type: String, required: true },
+    taskType: { type: String, required: true },
+    earnings: { type: Number, required: true },
+    appliedOn: { type: Date, required: true },
+    deadline: { type: Date, required: true },
     status: {
         type: String,
-        enum: ['Pending', 'In Progress', 'Completed'],
-        default: 'Pending'
+        default: 'Completed'
     },
-    description: {
-        type: String,
-        maxlength: [500, 'Description cannot exceed 500 characters']
-    }
-}, {
-    timestamps: true
+    description: { type: String, required: true }
 });
 
 export const Application = model<IApplication>('Application', ApplicationSchema);

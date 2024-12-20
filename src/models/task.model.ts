@@ -1,5 +1,3 @@
-// src/models/task.model.ts
-
 import { Schema, model, Document } from 'mongoose';
 
 export interface ITask extends Document {
@@ -22,7 +20,7 @@ export interface ITask extends Document {
         }>;
         links: string[];
     };
-    status: 'Open' | 'In Progress' | 'Completed';
+    status: 'Open' | 'In Progress' | 'Completed' | 'Pending';
     postedDate: Date;
 }
 
@@ -84,7 +82,7 @@ const TaskSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['Open', 'In Progress', 'Completed'],
+        enum: ['Open', 'In Progress', 'Completed', 'Pending'],
         default: 'Open'
     },
     postedDate: {
