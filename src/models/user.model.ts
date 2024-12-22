@@ -14,6 +14,10 @@ export interface UserDocument extends mongoose.Document {
 }
 
 const userSchema = new mongoose.Schema<UserDocument>({
+    /** include stripe accountId field
+     we need to handle login email and paypal email to avoid error 
+     if user wants to withdraw  through paypal
+     **/
     email:{
         type:String,
         unique:true,
@@ -30,11 +34,11 @@ const userSchema = new mongoose.Schema<UserDocument>({
         default:false
     },
     // Reference to the Wallet model (one-to-one relationship)
-    wallet:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Wallet",
-        required: true,
-    },
+    // wallet:{
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "Wallet",
+    //     required: true,
+    // },
 
 },{
     timestamps:true,

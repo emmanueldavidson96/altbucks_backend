@@ -31,7 +31,7 @@ export const addBankDetails = async (
         userId
     });
 
-    // Convert the UUID userId into an ObjectId
+
     const userObjectId = new mongoose.Types.ObjectId(validatedData.userId);
 
     const bankDetails = new BankDetailsModel({

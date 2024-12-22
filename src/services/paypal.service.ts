@@ -1,29 +1,32 @@
 import { getCurrentToken } from "../utils/PaypalToken";
 import paypalClient from "../config/Paypal-client";
-import { OrdersController, ApiError, CheckoutPaymentIntent } from "@paypal/paypal-server-sdk";
+import { OrdersController, ApiError, PaypalExperienceUserAction, OrderRequest, CheckoutPaymentIntent, OrderApplicationContextShippingPreference } from "@paypal/paypal-server-sdk";
+
+
+const ordersController = new OrdersController(paypalClient);
 
 
 interface PayoutResponse {
     batch_header: {
-        payout_batch_id: string;    
-        batch_status: string;       
+        payout_batch_id: string;
+        batch_status: string;
         amount: {
-            currency: string;       
-            value: string;          
+            currency: string;
+            value: string;
         };
     };
     items: Array<{
-        payout_item_id: string;     
-        transaction_status: string; 
+        payout_item_id: string;
+        transaction_status: string;
         payout_item: {
             receiver: string;
             amount: {
                 currency: string;
                 value: string;
             };
-            note: string;           
+            note: string;
         };
-        time_processed: string;     
+        time_processed: string;
     }>;
 }
 
@@ -37,10 +40,9 @@ export const createPayout = async (recipientEmail: string, amount: string): Prom
         amount: string;
         transaction_status: string;
         note: string;
-        transaction_date:string;
+        transaction_date: string;
     }>;
 }> => {
-    // Get the valid token before making the payout request
     const token = await getCurrentToken();
     console.log(token);
 
@@ -62,18 +64,17 @@ export const createPayout = async (recipientEmail: string, amount: string): Prom
         ],
     };
 
-    // Send the payout request to PayPal
     try {
         const response = await fetch('https://api-m.sandbox.paypal.com/v1/payments/payouts', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`, 
+                'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify(payoutData),
         });
 
-        if (!response.ok) { 
+        if (!response.ok) {
             throw new Error(`PayPal payout request failed: ${response.statusText}`);
         }
 
@@ -98,33 +99,51 @@ export const createPayout = async (recipientEmail: string, amount: string): Prom
     }
 };
 
-const ordersController = new OrdersController(paypalClient);
 
 export async function createOrder(amount: string, currency = "USD", userId: string): Promise<any> {
-    const orderRequest = {
-        body: {
-            intent: CheckoutPaymentIntent.Capture,
-            purchaseUnits: [
-                {
-                    amount: {
-                        currencyCode: currency,
-                        value: amount,
+    const orderRequest: OrderRequest = {
+        intent: CheckoutPaymentIntent.Capture,
+        purchaseUnits: [
+            {
+                amount: {
+                    currencyCode: currency,
+                    value: amount,
+                    breakdown: {
+                        itemTotal: {
+                            currencyCode: currency,
+                            value: amount,
+                        },
                     },
                 },
-            ],
-              // for production purpose to include the return_url
-            /*
-            application_context: {
-                return_url: "https://yourdomain.com/paypal/return?userId=${encodeURIComponent(userId)}",  //  where user should be redirected after approval.
-                cancel_url: "https://yourdomain.com/paypal/cancel",  //  where user should be redirected if user cancel the payment on PayPal
-            }
-            */
+                items: [
+                    {
+                        name: 'Task Creator Deposit',
+                        description: 'Deposit made by the task creator on Alt Bucks',
+                        quantity: '1',
+                        unitAmount: {
+                            currencyCode: currency,
+                            value: amount,
+                        },
+                    },
+                ],
+            },
+        ],
+        paymentSource: {
+            paypal: {
+                experienceContext: {
+                    returnUrl: 'https://altbucks.com/complete-deposit',
+                    cancelUrl: 'https://altbucks.com/cancel-deposit',
+                    userAction: PaypalExperienceUserAction.PayNow,
+                },
+            },
         },
-        prefer: "return=minimal",
     };
 
     try {
-        const { result, statusCode} = await ordersController.ordersCreate(orderRequest);
+        const { result, statusCode } = await ordersController.ordersCreate({
+            body: orderRequest,
+            prefer: 'return=representation',
+        });
 
 
 
@@ -135,7 +154,7 @@ export async function createOrder(amount: string, currency = "USD", userId: stri
         }
 
         console.log("Order Created Successfully:", result);
-        
+
         return result;
     } catch (error) {
         if (error instanceof ApiError) {
@@ -171,7 +190,7 @@ export async function captureOrder(orderId: string): Promise<any> {
     } catch (error) {
         if (error instanceof ApiError) {
             console.error("PayPal API Error:", error.message, error.result);
-            
+
             throw new Error("Failed to capture payment. Please try again later.");
         }
 

@@ -22,9 +22,9 @@ export const authenticate =  (request: Request, response: Response, next: NextFu
     const { payload, error } = verifyToken<AccessTokenPayload>(token);
 
     if (error) {
-        return response.status(401).json({ message: "Invalid or expired token" });  // Token is invalid or expired
+        return response.status(401).json({ message: "Invalid or expired token" }); 
     }
 
-    request.user = payload;  // Attach the user payload to the request object (for access in the next middleware)
+    request.user = payload; 
     next();
 }

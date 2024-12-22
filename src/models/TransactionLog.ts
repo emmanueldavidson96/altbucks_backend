@@ -1,6 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-// Define the TransactionLog interface extending the Document
 export interface TransactionLog extends Document {
     amount: number;
     transactionType: string;
@@ -9,7 +8,7 @@ export interface TransactionLog extends Document {
     transactionDate: Date;
 }
 
-// Define the Mongoose schema for the transaction log
+
 const transactionLogSchema: Schema = new Schema(
     {
         amount: {
@@ -36,11 +35,10 @@ const transactionLogSchema: Schema = new Schema(
         },
     },
     {
-        timestamps: true, // Automatically adds createdAt and updatedAt fields
+        timestamps: true,
     }
 );
 
-// Create the TransactionLog model using the schema
 const TransactionLogModel = mongoose.model<TransactionLog>('TransactionLog', transactionLogSchema);
 
 export default TransactionLogModel;

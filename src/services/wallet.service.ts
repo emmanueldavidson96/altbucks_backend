@@ -1,6 +1,6 @@
-import TaskEarnerWallet, { Wallet} from "../models/task-earner-wallet.model";
+import TaskEarnerWallet, { Wallet } from "../models/task-earner-wallet.model";
 import TaskCreatorWallet from "../models/task-creator-wallet";
-import { ITaskCreatorWallet} from "../models/task-creator-wallet";
+import { ITaskCreatorWallet } from "../models/task-creator-wallet";
 import TransactionLogModel from '../models/TransactionLog';
 
 export const getTaskEarnerWalletDetails = async (userId: string) => {
@@ -56,10 +56,10 @@ export const updateTaskCreatorWallet = async (userId: string, amount: number) =>
     await wallet.save();
 
     const transactionLog = new TransactionLogModel({
-      wallet: wallet._id,                     
-      amount: amount,                         
-      transactionType: 'credit', 
-      transactionDate: new Date(),          
+      wallet: wallet._id,
+      amount: amount,
+      transactionType: 'credit',
+      transactionDate: new Date(),
       description: `Credit of ${amount} from Stripe payment`,
     });
 
@@ -81,7 +81,7 @@ export const updateTaskEarnerWallet = async (userId: string, amount: number): Pr
     throw new Error("Task earner wallet not found.");
   }
 
-  wallet.availableBalance -= amount; 
+  wallet.availableBalance -= amount;
   wallet.totalBalanceWithdrawn += amount;
 
   await wallet.save();
