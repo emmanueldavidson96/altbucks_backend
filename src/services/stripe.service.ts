@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { updateTaskCreatorWallet } from "./wallet.service";
-const stripe = new Stripe("", {
+const stripe = new Stripe("sk_test_51QVVHVRpLXhxt61JIPWMR2nIoKNQrU85z0ISWzYsUU7a4agUEpVhb9SnEoAGoXP4TbliyaJzmILSVfu3EE6AdLmh00fcWgXvVS", {
   apiVersion: '2024-11-20.acacia',
 });
 
