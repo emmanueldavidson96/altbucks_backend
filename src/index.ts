@@ -1,4 +1,3 @@
-// index.ts
 import express, { NextFunction, Request, Response } from "express";
 import "dotenv/config";
 import connectToDatabase from "./config/db";

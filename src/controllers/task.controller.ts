@@ -1,191 +1,161 @@
 import { Request, Response } from 'express';
 import { TaskService } from '../services/task.service';
+import catchErrors from '../utils/catchErrors';
+import { CREATED, OK, UNAUTHORISED } from '../constants/http';
+import { verifyToken, AccessTokenPayload } from '../utils/jwt';
+import appAssert from '../utils/appAssert';
+import { Types } from 'mongoose';
+
+// Helper function to verify user access token
+const verifyAccessToken = (accessToken: string | undefined) => {
+    appAssert(accessToken, UNAUTHORISED, "No access token provided");
+
+    const { payload, error } = verifyToken<AccessTokenPayload>(accessToken);
+    appAssert(!error && payload, UNAUTHORISED, "Invalid access token");
+
+    // Type assertion since we know the structure from JWT utils
+    const typedPayload = payload as AccessTokenPayload;
+    appAssert(typedPayload.userId, UNAUTHORISED, "Invalid token payload");
+
+    // Convert string ID to ObjectId
+    const userId = new Types.ObjectId(typedPayload.userId.toString());
+    return { ...typedPayload, userId };
+};
 
 export class TaskController {
     // Get all tasks with pagination
-    static async getAllTasks(req: Request, res: Response) {
-        try {
-            const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 10;
-            const result = await TaskService.getAllTasks(page, limit);
+    static getAllTasks = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
 
-            res.status(200).json({
-                success: true,
-                data: result.tasks,
-                pagination: result.pagination
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+
+        const result = await TaskService.getAllTasks(userId, page, limit);
+
+        return res.status(OK).json({
+            success: true,
+            data: result.tasks,
+            pagination: result.pagination
+        });
+    });
 
     // Create new task
-    static async createTask(req: Request, res: Response) {
-        try {
-            const task = await TaskService.createTask(req.body);
-            res.status(201).json({
-                success: true,
-                data: task
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static createTask = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
+
+        const task = await TaskService.createTask(req.body, userId);
+
+        return res.status(CREATED).json({
+            success: true,
+            data: task
+        });
+    });
 
     // Get recent tasks
-    static async getRecentTasks(req: Request, res: Response) {
-        try {
-            const limit = parseInt(req.query.limit as string) || 8;
-            const tasks = await TaskService.getRecentTasks(limit);
-            res.status(200).json({
-                success: true,
-                data: tasks
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static getRecentTasks = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
+
+        const limit = parseInt(req.query.limit as string) || 8;
+        const tasks = await TaskService.getRecentTasks(userId, limit);
+
+        return res.status(OK).json({
+            success: true,
+            data: tasks
+        });
+    });
 
     // Search tasks
-    static async searchTasks(req: Request, res: Response) {
-        try {
-            const tasks = await TaskService.searchTasks(req.query);
-            res.status(200).json({
-                success: true,
-                data: tasks
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static searchTasks = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
+
+        const tasks = await TaskService.searchTasks(userId, req.query);
+
+        return res.status(OK).json({
+            success: true,
+            data: tasks
+        });
+    });
 
     // Get task by ID
-    static async getTaskById(req: Request, res: Response) {
-        try {
-            const task = await TaskService.getTaskById(req.params.id);
-            res.status(200).json({
-                success: true,
-                data: task
-            });
-        } catch (error: any) {
-            res.status(404).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static getTaskById = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
 
-    // Update task status
-    static async updateTaskStatus(req: Request, res: Response) {
-        try {
-            const task = await TaskService.updateTaskStatus(
-                req.params.id,
-                req.body.status
-            );
-            res.status(200).json({
-                success: true,
-                data: task
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+        const task = await TaskService.getTaskById(req.params.id, userId);
+
+        return res.status(OK).json({
+            success: true,
+            data: task
+        });
+    });
 
     // Get tasks by status
-    static async getTasksByStatus(req: Request, res: Response) {
-        try {
-            const tasks = await TaskService.getTasksByStatus(req.params.status);
-            res.status(200).json({
-                success: true,
-                data: tasks
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static getTasksByStatus = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
+
+        const tasks = await TaskService.getTasksByStatus(userId, req.params.status);
+
+        return res.status(OK).json({
+            success: true,
+            data: tasks
+        });
+    });
 
     // Get upcoming deadlines
-    static async getUpcomingDeadlines(req: Request, res: Response) {
-        try {
-            const days = parseInt(req.query.days as string) || 7;
-            const tasks = await TaskService.getUpcomingDeadlines(days);
-            res.status(200).json({
-                success: true,
-                data: tasks
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static getUpcomingDeadlines = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
 
+        const days = parseInt(req.query.days as string) || 7;
+        const tasks = await TaskService.getUpcomingDeadlines(userId, days);
+
+        return res.status(OK).json({
+            success: true,
+            data: tasks
+        });
+    });
 
     // Mark task as complete
-    static async markTaskComplete(req: Request, res: Response) {
-        try {
-            const task = await TaskService.markTaskAsComplete(req.params.id);
-            res.status(200).json({
-                success: true,
-                data: task
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static markTaskComplete = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
+
+        const task = await TaskService.markTaskAsComplete(req.params.id, userId);
+
+        return res.status(OK).json({
+            success: true,
+            data: task
+        });
+    });
 
     // Mark task as pending
-    static async markTaskPending(req: Request, res: Response) {
-        try {
-            const task = await TaskService.markTaskAsPending(req.params.id);
-            res.status(200).json({
-                success: true,
-                data: task
-            });
-        } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
+    static markTaskPending = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
+
+        const task = await TaskService.markTaskAsPending(req.params.id, userId);
+
+        return res.status(OK).json({
+            success: true,
+            data: task
+        });
+    });
 
     // Delete task
-    static async deleteTask(req: Request, res: Response) {
-        try {
-            const task = await TaskService.deleteTask(req.params.id);
-            res.status(200).json({
-                success: true,
-                data: task
-            });
-        } catch (error: any) {
-            res.status(404).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
-}
+    static deleteTask = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
 
+        const task = await TaskService.deleteTask(req.params.id, userId);
+
+        return res.status(OK).json({
+            success: true,
+            data: task
+        });
+    });
+}

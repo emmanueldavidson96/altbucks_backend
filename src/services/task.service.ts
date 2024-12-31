@@ -1,26 +1,30 @@
 import { Task, ITask } from '../models/task.model';
+import { Types } from 'mongoose';
+import { UNAUTHORISED } from '../constants/http';
+import appAssert from '../utils/appAssert';
 
 export class TaskService {
-    // Creates new task with default 'Open' status
-    static async createTask(taskData: Partial<ITask>) {
+    // Creates new task with user ownership
+    static async createTask(taskData: Partial<ITask>, userId: Types.ObjectId) {
         const task = await Task.create({
             ...taskData,
-            status: 'Open',
+            userId, // Associate task with user
+            status: 'pending', // Changed default status to pending
             postedDate: new Date()
         });
         return task;
     }
 
-    // Fetches paginated tasks with metadata
-    static async getAllTasks(page = 1, limit = 10) {
+    // Fetches paginated tasks for specific user
+    static async getAllTasks(userId: Types.ObjectId, page = 1, limit = 10) {
         const skip = (page - 1) * limit;
 
-        const tasks = await Task.find()
-            .sort({ postedDate: -1 })  // Latest first
+        const tasks = await Task.find({ userId })
+            .sort({ postedDate: -1 })
             .skip(skip)
             .limit(limit);
 
-        const total = await Task.countDocuments();
+        const total = await Task.countDocuments({ userId });
 
         return {
             tasks,
@@ -34,36 +38,42 @@ export class TaskService {
         };
     }
 
-    // Gets recent open tasks for quick access
-    static async getRecentTasks(limit = 15) {
-        return await Task.find({ status: 'Open' })
+    // Gets recent tasks for specific user
+    static async getRecentTasks(userId: Types.ObjectId, limit = 15) {
+        return await Task.find({
+            userId,
+            status: 'pending'
+        })
             .sort({ postedDate: -1 })
             .limit(limit);
     }
 
-    // Finds specific task by ID
-    static async getTaskById(taskId: string) {
-        const task = await Task.findById(taskId);
-        if (!task) {
-            throw new Error('Task not found');
-        }
+    // Finds specific task by ID with ownership check
+    static async getTaskById(taskId: string, userId: Types.ObjectId) {
+        const task = await Task.findOne({
+            _id: taskId,
+            userId
+        });
+        appAssert(task, UNAUTHORISED, "Task not found or access denied");
         return task;
     }
 
-    // Searches tasks based on various filters
-    static async searchTasks(searchParams: {
-        query?: string,
-        taskType?: string,
-        minAmount?: number,
-        maxAmount?: number,
-        location?: string,
-        status?: string
-    }) {
+    // Searches tasks with user context
+    static async searchTasks(
+        userId: Types.ObjectId,
+        searchParams: {
+            query?: string,
+            taskType?: string,
+            minAmount?: number,
+            maxAmount?: number,
+            location?: string,
+            status?: string
+        }
+    ) {
         const { query, taskType, minAmount, maxAmount, location, status } = searchParams;
 
-        const filterQuery: any = {};
+        const filterQuery: any = { userId }; // Add user filter
 
-        // Add text search filters
         if (query) {
             filterQuery.$or = [
                 { title: { $regex: query, $options: 'i' } },
@@ -71,12 +81,10 @@ export class TaskService {
             ];
         }
 
-        // Add optional filters if provided
         if (taskType) filterQuery.taskType = taskType;
         if (location) filterQuery.location = location;
         if (status) filterQuery.status = status;
 
-        // Add compensation range filter
         if (minAmount || maxAmount) {
             filterQuery['compensation.amount'] = {};
             if (minAmount) filterQuery['compensation.amount'].$gte = minAmount;
@@ -87,38 +95,39 @@ export class TaskService {
             .sort({ postedDate: -1 });
     }
 
-    // Updates task status with validation
-    static async updateTaskStatus(taskId: string, status: 'Open' | 'In Progress' | 'Completed' | 'Pending') {
-        const validStatuses = ['Open', 'In Progress', 'Completed', 'Pending'];
-        if (!validStatuses.includes(status)) {
-            throw new Error('Invalid status provided');
-        }
+    // Updates task status with ownership validation
+    static async updateTaskStatus(
+        taskId: string,
+        userId: Types.ObjectId,
+        status: 'pending' | 'completed' // Simplified status options
+    ) {
+        const validStatuses = ['pending', 'completed'];
+        appAssert(validStatuses.includes(status), 400, 'Invalid status provided');
 
-        const task = await Task.findByIdAndUpdate(
-            taskId,
+        const task = await Task.findOneAndUpdate(
+            { _id: taskId, userId }, // Check ownership
             { status },
             { new: true, runValidators: true }
         );
 
-        if (!task) {
-            throw new Error('Task not found');
-        }
-
+        appAssert(task, UNAUTHORISED, "Task not found or access denied");
         return task;
     }
-    // Gets tasks filtered by status
-    static async getTasksByStatus(status: string) {
-        return await Task.find({ status })
+
+    // Gets tasks by status for specific user
+    static async getTasksByStatus(userId: Types.ObjectId, status: string) {
+        return await Task.find({ userId, status })
             .sort({ postedDate: -1 });
     }
 
-    // Finds tasks due within specified days
-    static async getUpcomingDeadlines(days = 7) {
+    // Gets upcoming deadlines for specific user
+    static async getUpcomingDeadlines(userId: Types.ObjectId, days = 7) {
         const dateThreshold = new Date();
         dateThreshold.setDate(dateThreshold.getDate() + days);
 
         return await Task.find({
-            status: 'Open',
+            userId,
+            status: 'pending', // Changed from 'Open' to 'pending'
             deadline: {
                 $gte: new Date(),
                 $lte: dateThreshold
@@ -126,46 +135,38 @@ export class TaskService {
         }).sort({ deadline: 1 });
     }
 
-
-    //  method for marking task as complete
-    static async markTaskAsComplete(taskId: string) {
-        const task = await Task.findByIdAndUpdate(
-            taskId,
-            { status: 'Completed' },
+    // Completes task with ownership check
+    static async markTaskAsComplete(taskId: string, userId: Types.ObjectId) {
+        const task = await Task.findOneAndUpdate(
+            { _id: taskId, userId },
+            { status: 'completed' },
             { new: true, runValidators: true }
         );
 
-        if (!task) {
-            throw new Error('Task not found');
-        }
-
+        appAssert(task, UNAUTHORISED, "Task not found or access denied");
         return task;
     }
 
-    //  method for marking task as pending
-    static async markTaskAsPending(taskId: string) {
-        const task = await Task.findByIdAndUpdate(
-            taskId,
-            { status: 'Pending' },
+    // Sets task to pending with ownership check
+    static async markTaskAsPending(taskId: string, userId: Types.ObjectId) {
+        const task = await Task.findOneAndUpdate(
+            { _id: taskId, userId },
+            { status: 'pending' },
             { new: true, runValidators: true }
         );
 
-        if (!task) {
-            throw new Error('Task not found');
-        }
-
+        appAssert(task, UNAUTHORISED, "Task not found or access denied");
         return task;
     }
 
-    // New method for deleting task
-    static async deleteTask(taskId: string) {
-        const task = await Task.findByIdAndDelete(taskId);
+    // Deletes task with ownership check
+    static async deleteTask(taskId: string, userId: Types.ObjectId) {
+        const task = await Task.findOneAndDelete({
+            _id: taskId,
+            userId
+        });
 
-        if (!task) {
-            throw new Error('Task not found');
-        }
-
+        appAssert(task, UNAUTHORISED, "Task not found or access denied");
         return task;
     }
-
 }

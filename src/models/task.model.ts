@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface ITask extends Document {
     title: string;
@@ -20,8 +20,9 @@ export interface ITask extends Document {
         }>;
         links: string[];
     };
-    status: 'Open' | 'In Progress' | 'Completed' | 'Pending';
+    status: 'pending' |'in progress' | 'completed';
     postedDate: Date;
+    userId: Types.ObjectId;
 }
 
 const TaskSchema = new Schema({
@@ -34,7 +35,7 @@ const TaskSchema = new Schema({
     taskType: {
         type: String,
         required: [true, 'Task type is required'],
-        enum: ['writing', 'design', 'development', 'review']
+        enum: ['writing', 'design', 'development', 'review', 'vedio review', 'marketing', 'vedio Editing', 'data analysis']
     },
     description: {
         type: String,
@@ -82,15 +83,25 @@ const TaskSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['Open', 'In Progress', 'Completed', 'Pending'],
-        default: 'Open'
+        enum: ['pending', 'in progress', 'completed'],
+        default: 'pending'
     },
     postedDate: {
         type: Date,
         default: Date.now
+    },
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'User ID is required'],
+        index: true
     }
 }, {
     timestamps: true
 });
+
+// Add compound indexes for common queries
+TaskSchema.index({ userId: 1, status: 1 });
+TaskSchema.index({ userId: 1, postedDate: -1 });
 
 export const Task = model<ITask>('Task', TaskSchema);
