@@ -15,7 +15,7 @@ export const referralInviteHandler = catchErrors(
         const validatedEmail = emailSchema.parse(request.body.email);
 
         // The userId will be added by the authentication middleware
-        const userId = request.user.id
+        const { userId } = request.body;
 
         //call service
         const referral = await sendReferralInvite(validatedEmail, userId);
@@ -27,33 +27,33 @@ export const referralInviteHandler = catchErrors(
 
 export const referralLinkHandler = catchErrors(
     async (request, response) => {
-    const userId = request.user.id;
+        const { userId } = request.body;
 
-    const inviteLink = await getInviteLink(userId);
+        const inviteLink = await getInviteLink(userId);
 
-    return response.status(OK).json({ inviteLink });
+        return response.status(OK).json({ inviteLink });
     }
 )
 
 export const getReferalsListHandler = catchErrors(
     async (request, response) => {
-        const userId = request.user.id;
-    const filters = {
-        status: request.query.status,
-        date: request.query.date,
-        page: parseInt(request.query.page as string, 10) || 1,
-        limit: parseInt(request.query.limit as string, 10) || 10,
-    };
+        const { userId } = request.body;
+        const filters = {
+            status: request.query.status,
+            date: request.query.date,
+            page: parseInt(request.query.page as string, 10) || 1,
+            limit: parseInt(request.query.limit as string, 10) || 10,
+        };
 
-    const referralsList = await getReferralsList(userId, filters);
+        const referralsList = await getReferralsList(userId, filters);
 
-    return response.status(OK).json(referralsList);
-    }
+        return response.status(OK).json(referralsList);
+        }
 )
 
 export const exportReferralsListHandler = catchErrors(
     async (request, response) => {
-        const userId = request.user.id;
+        const { userId } = request.body;
 
         const csvContent = await exportReferralsList(userId);
 

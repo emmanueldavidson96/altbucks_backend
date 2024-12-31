@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 export interface ReferralDocument extends mongoose.Document {
     earnerId: mongoose.Schema.Types.ObjectId;
-    referredUserId: mongoose.Schema.Types.ObjectId;
     email?: string;
     status: "pending" | "accepted";
     sentAt?: Date;
@@ -15,11 +14,6 @@ export interface ReferralDocument extends mongoose.Document {
 const referralSchema = new mongoose.Schema<ReferralDocument>(
     {
       earnerId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-      },
-      referredUserId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,

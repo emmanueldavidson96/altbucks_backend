@@ -17,8 +17,8 @@ export const sendReferralInvite = async (email:string, userId:string) => {
 
 export const getInviteLink = async (userId: string) => {
     // To-do create generateInviteLink function
-    const inviteLink = generateInviteLink(userId);
-    return { inviteLink };
+    // const inviteLink = generateInviteLink(userId);
+    // return { inviteLink };
 };
 
 export const getReferralsList = async (userId: string, filters: any) => {
@@ -52,7 +52,7 @@ export const exportReferralsList = async (userId: string) => {
     const csvRows = referrals
         .map(
             (referral) =>
-                `${referral.email},${referral.status},${referral.sentAt.toISOString()},${referral.acceptedAt?.toISOString() || ""}`
+                `${referral.email},${referral.status},${referral.acceptedAt?.toISOString() || ""}`
         )
         .join("\n");
 
