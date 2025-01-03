@@ -158,4 +158,17 @@ export class TaskController {
             data: task
         });
     });
+
+
+    static updateTask = catchErrors(async (req: Request, res: Response) => {
+        const { accessToken } = req.cookies;
+        const { userId } = verifyAccessToken(accessToken);
+
+        const task = await TaskService.updateTask(req.params.id, userId, req.body);
+
+        return res.status(OK).json({
+            success: true,
+            data: task
+        });
+    });
 }

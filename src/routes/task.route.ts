@@ -12,9 +12,10 @@ router.get('/status/:status', TaskController.getTasksByStatus);
 router.get('/upcoming', TaskController.getUpcomingDeadlines);
 router.get('/:id', TaskController.getTaskById);
 
-// Status changes and deletion
+// Status changes ,deletion and update
 router.patch('/:id/complete', TaskController.markTaskComplete);
 router.patch('/:id/pending', TaskController.markTaskPending);
 router.delete('/:id', TaskController.deleteTask);
+router.patch('/:id', TaskController.updateTask);
 
 export default router;

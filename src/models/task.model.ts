@@ -49,7 +49,7 @@ const TaskSchema = new Schema({
     },
     location: {
         type: String,
-        enum: ['remote', 'onsite', ''],
+        enum: ['remote', 'onsite'],
         default: ''
     },
     compensation: {

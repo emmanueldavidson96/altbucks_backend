@@ -19,12 +19,12 @@ export class TaskService {
     static async getAllTasks(userId: Types.ObjectId, page = 1, limit = 10) {
         const skip = (page - 1) * limit;
 
-        const tasks = await Task.find({ userId })
-            .sort({ postedDate: -1 })
+        const tasks = await Task.find({userId})
+            .sort({postedDate: -1})
             .skip(skip)
             .limit(limit);
 
-        const total = await Task.countDocuments({ userId });
+        const total = await Task.countDocuments({userId});
 
         return {
             tasks,
@@ -44,7 +44,7 @@ export class TaskService {
             userId,
             status: 'pending'
         })
-            .sort({ postedDate: -1 })
+            .sort({postedDate: -1})
             .limit(limit);
     }
 
@@ -70,14 +70,14 @@ export class TaskService {
             status?: string
         }
     ) {
-        const { query, taskType, minAmount, maxAmount, location, status } = searchParams;
+        const {query, taskType, minAmount, maxAmount, location, status} = searchParams;
 
-        const filterQuery: any = { userId }; // Add user filter
+        const filterQuery: any = {userId}; // Add user filter
 
         if (query) {
             filterQuery.$or = [
-                { title: { $regex: query, $options: 'i' } },
-                { description: { $regex: query, $options: 'i' } }
+                {title: {$regex: query, $options: 'i'}},
+                {description: {$regex: query, $options: 'i'}}
             ];
         }
 
@@ -92,7 +92,7 @@ export class TaskService {
         }
 
         return await Task.find(filterQuery)
-            .sort({ postedDate: -1 });
+            .sort({postedDate: -1});
     }
 
     // Updates task status with ownership validation
@@ -105,9 +105,9 @@ export class TaskService {
         appAssert(validStatuses.includes(status), 400, 'Invalid status provided');
 
         const task = await Task.findOneAndUpdate(
-            { _id: taskId, userId }, // Check ownership
-            { status },
-            { new: true, runValidators: true }
+            {_id: taskId, userId}, // Check ownership
+            {status},
+            {new: true, runValidators: true}
         );
 
         appAssert(task, UNAUTHORISED, "Task not found or access denied");
@@ -116,8 +116,8 @@ export class TaskService {
 
     // Gets tasks by status for specific user
     static async getTasksByStatus(userId: Types.ObjectId, status: string) {
-        return await Task.find({ userId, status })
-            .sort({ postedDate: -1 });
+        return await Task.find({userId, status})
+            .sort({postedDate: -1});
     }
 
     // Gets upcoming deadlines for specific user
@@ -132,15 +132,15 @@ export class TaskService {
                 $gte: new Date(),
                 $lte: dateThreshold
             }
-        }).sort({ deadline: 1 });
+        }).sort({deadline: 1});
     }
 
     // Completes task with ownership check
     static async markTaskAsComplete(taskId: string, userId: Types.ObjectId) {
         const task = await Task.findOneAndUpdate(
-            { _id: taskId, userId },
-            { status: 'completed' },
-            { new: true, runValidators: true }
+            {_id: taskId, userId},
+            {status: 'completed'},
+            {new: true, runValidators: true}
         );
 
         appAssert(task, UNAUTHORISED, "Task not found or access denied");
@@ -150,9 +150,9 @@ export class TaskService {
     // Sets task to pending with ownership check
     static async markTaskAsPending(taskId: string, userId: Types.ObjectId) {
         const task = await Task.findOneAndUpdate(
-            { _id: taskId, userId },
-            { status: 'pending' },
-            { new: true, runValidators: true }
+            {_id: taskId, userId},
+            {status: 'pending'},
+            {new: true, runValidators: true}
         );
 
         appAssert(task, UNAUTHORISED, "Task not found or access denied");
@@ -165,6 +165,26 @@ export class TaskService {
             _id: taskId,
             userId
         });
+
+        appAssert(task, UNAUTHORISED, "Task not found or access denied");
+        return task;
+    }
+
+
+    // update task
+    static async updateTask(
+        taskId: string,
+        userId: Types.ObjectId,
+        updateData: Partial<ITask>
+    ) {
+        // Remove fields that shouldn't be updated directly
+        const {userId: _, status: __, postedDate: ___, ...safeUpdateData} = updateData;
+
+        const task = await Task.findOneAndUpdate(
+            {_id: taskId, userId}, // Ensure user owns the task
+            {...safeUpdateData},
+            {new: true, runValidators: true}
+        );
 
         appAssert(task, UNAUTHORISED, "Task not found or access denied");
         return task;
