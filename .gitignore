@@ -1,5 +1,4 @@
 /node_modules
-.env
 dist
 
 node_modules
@@ -10,3 +9,4 @@ dist-ssr
 
 /uploads/*
 !uploads/.gitkeep
+config.bat

@@ -58,7 +58,7 @@ export class TaskController {
         const { accessToken } = req.cookies;
         const { userId } = verifyAccessToken(accessToken);
 
-        const limit = parseInt(req.query.limit as string) || 8;
+        const limit = parseInt(req.query.limit as string) || 10;
         const tasks = await TaskService.getRecentTasks(userId, limit);
 
         return res.status(OK).json({
