@@ -9,6 +9,7 @@ import { oneYearFromNow } from "../utils/date";
 import jwt from "jsonwebtoken";
 import { refreshTokenSignOptions, signToken } from "../utils/jwt";
 
+
 export type CreateAccountParams = {
     email:string;
     password:string;
@@ -111,8 +112,34 @@ export const loginUser = async ({email, password, userAgent}:LoginParams) => {
     }
 }
 
-export const refreshUserAccessToken = async (refreshToken:string) => {
-    const {} = verifyToken(refreshToken, {
-        secret:refreshTokenSignOptions.secret,
-    })
+export const refreshUserAccessToken = async (refreshToken: string) => {
+    // Verify the refresh token
+    const { payload } = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as {
+        payload: { sessionId: string }
+    };
+
+    // Get session
+    const session = await SessionModel.findById(payload.sessionId);
+    appAssert(session, UNAUTHORISED, "Invalid session");
+
+    // Get user from session
+    const user = await UserModel.findById(session.userId);
+    appAssert(user, UNAUTHORISED, "User not found");
+
+    // Create new tokens
+    const newAccessToken = signToken({
+        userId: user._id,
+        sessionId: session._id
+    });
+
+    const newRefreshToken = signToken(
+        { sessionId: session._id },
+        refreshTokenSignOptions
+    );
+
+    return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        user: user.omitPassword()
+    };
 }
