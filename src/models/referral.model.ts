@@ -44,5 +44,5 @@ const referralSchema = new mongoose.Schema<ReferralDocument>({
     
 });
 
-const ReferralModel = mongoose.model<ReferralDocument>("Referral", referralSchema);
-export default ReferralModel;
+const Referral = mongoose.model<ReferralDocument>("Referral", referralSchema);
+export default Referral;

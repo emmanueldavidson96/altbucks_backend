@@ -1,7 +1,8 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { compareValue, hashValue } from "../utils/bcrypt";
 
 export interface UserDocument extends mongoose.Document {
+    _id: Types.ObjectId;
     email:string,
     username:string,
     password:string,
@@ -18,12 +19,12 @@ export interface UserDocument extends mongoose.Document {
 }
 
 const userSchema = new mongoose.Schema<UserDocument>({
-    email:{
+    username:{
         type:String,
         unique:true,
         required:true,
     },
-    username:{
+    email:{
         type:String,
         unique:true,
         required:true,
@@ -80,5 +81,5 @@ userSchema.methods.omitPassword = function (){
     return user;
 }
 
-const UserModel = mongoose.model("User", userSchema);
-export default UserModel
+const User = mongoose.model("User", userSchema);
+export default User

@@ -1,101 +1,152 @@
 import { Request, Response } from "express";
 import referralService from "../services/referral.service";
+import catchErrors from "../utils/catchErrors";
+import { CREATED, OK, UNAUTHORISED } from "../constants/http";
+import { verifyToken, AccessTokenPayload } from "../utils/jwt";
+import appAssert from "../utils/appAssert";
+import { Types } from "mongoose";
+import User from "../models/user.model";
+import Referral from "../models/referral.model"; // Assuming there's a referral model
 
-// Utility to handle errors
-const handleError = (error: unknown, res: Response) => {
-  if (error instanceof Error) {
-    console.error("Error:", error.message);
-    res.status(500).json({ message: error.message });
-  } else {
-    console.error("Unknown error:", error);
-    res.status(500).json({ message: "An unexpected error occurred" });
-  }
+// Helper function to verify user access token
+const verifyAccessToken = (accessToken: string | undefined) => {
+    appAssert(accessToken, UNAUTHORISED, "No access token provided");
+
+    const { payload, error } = verifyToken<AccessTokenPayload>(accessToken);
+    appAssert(!error && payload, UNAUTHORISED, "Invalid access token");
+
+    // Type assertion since we know the structure from JWT utils
+    const typedPayload = payload as AccessTokenPayload;
+    appAssert(typedPayload.userId, UNAUTHORISED, "Invalid token payload");
+
+    // Convert string ID to ObjectId
+    const userId = new Types.ObjectId(typedPayload.userId.toString());
+    return { ...typedPayload, userId };
 };
 
-// Share Referral
-export const shareReferralHandler = async (req: Request, res: Response) => {
-  const { userId } = req.body;
+// Controller for sharing referral link
+export const shareReferral = catchErrors(async (req: Request, res: Response) => {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    const { userId } = verifyAccessToken(accessToken);
 
-  try {
-    const user = await referralService.findUserById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    const user = await User.findById(userId);
+    appAssert(user, UNAUTHORISED, "User not found");
 
-    return res.status(200).json({
-      message: "Referral link shared successfully",
-      link: `http://localhost:4004/register?ref=${user.qrCode}`,
+    res.status(OK).json({
+        message: "Referral link generated successfully",
+        referralLink: `http://yourapp.com/register?ref=${user.qrCode}`,
     });
-  } catch (error) {
-    handleError(error, res);
-  }
-};
+});
 
-// Generate Referral Code
-export const generateReferralCodeHandler = async (req: Request, res: Response) => {
-  const { userId } = req.body;
+// Controller for creating a referral
+export const createReferral = catchErrors(async (req: Request, res: Response) => {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    const { userId } = verifyAccessToken(accessToken);
 
-  try {
-    const qrCode = await referralService.generateReferralCode(userId);
-    return res.status(201).json({
-      message: "Referral code generated successfully",
-      qrCode,
+    const { referredUserId } = req.body;
+    appAssert(referredUserId, UNAUTHORISED, "Referred user ID is required");
+
+    // Create a referral
+    const referral = new Referral({
+        userId,
+        referredUserId: new Types.ObjectId(referredUserId),
     });
-  } catch (error) {
-    handleError(error, res);
-  }
-};
 
-// Create Referral
-export const createReferralHandler = async (req: Request, res: Response) => {
-  try {
-    await referralService.createReferral(req.body);
-    return res.status(201).json({ message: "Referral created successfully" });
-  } catch (error) {
-    handleError(error, res);
-  }
-};
+    await referral.save();
+    res.status(CREATED).json({ message: "Referral created successfully" });
+});
 
-// Fetch Referrals
-export const fetchReferralsHandler = async (req: Request, res: Response) => {
-  try {
-    const referrals = await referralService.fetchReferrals(req.query, req.query.sortBy);
-    return res.json(referrals);
-  } catch (error) {
-    handleError(error, res);
-  }
-};
+// Controller for fetching referrals
+export const fetchReferrals = catchErrors(async (req: Request, res: Response) => {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    const { userId } = verifyAccessToken(accessToken);
 
-// Track Referrals
-export const trackReferralsHandler = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+    const referrals = await Referral.find({ userId }).populate("referredUserId");
+    res.status(OK).json({ referrals });
+});
 
-  try {
-    const referrals = await referralService.trackReferrals(userId);
-    return res.json({ referrals });
-  } catch (error) {
-    handleError(error, res);
-  }
-};
+export const generateReferralCode = catchErrors(async (req: Request, res: Response) => {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    const { userId } = verifyAccessToken(accessToken);
 
-// Get Leaderboard
-export const getLeaderboardHandler = async (_req: Request, res: Response) => {
-  try {
-    const leaderboard = await referralService.getLeaderboard();
-    return res.json(leaderboard);
-  } catch (error) {
-    handleError(error, res);
-  }
-};
+    const user = await User.findById(userId);
+    appAssert(user, UNAUTHORISED, "User not found");
 
-// Get Rewards
-export const getRewardsHandler = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+    // Generate a unique referral code (e.g., based on the user's ID or username)
+    const referralCode = `REF-${user._id.toString().slice(-6)}`;
 
-  try {
-    const rewards = await referralService.getRewards(userId);
-    return res.json(rewards);
-  } catch (error) {
-    handleError(error, res);
-  }
-};
+    // Save the referral code to the user document
+    user.qrCode = referralCode;
+    await user.save();
+
+    res.status(CREATED).json({
+        message: "Referral code generated successfully",
+        referralCode,
+    });
+});
+
+export const trackReferrals = catchErrors(async (req: Request, res: Response) => {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    const { userId } = verifyAccessToken(accessToken);
+
+    const referrals = await Referral.find({ userId }).populate("referredUserId", "username email");
+    res.status(OK).json({
+        message: "Referrals tracked successfully",
+        referrals,
+    });
+});
+
+export const getLeaderboard = catchErrors(async (_req: Request, res: Response) => {
+    const leaderboard = await Referral.aggregate([
+        {
+            $group: {
+                _id: "$userId",
+                totalReferrals: { $sum: 1 },
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "_id",
+                foreignField: "_id",
+                as: "user",
+            },
+        },
+        {
+            $unwind: "$user",
+        },
+        {
+            $project: {
+                username: "$user.username",
+                email: "$user.email",
+                totalReferrals: 1,
+            },
+        },
+        { $sort: { totalReferrals: -1 } },
+        { $limit: 10 }, // Top 10 users
+    ]);
+
+    res.status(OK).json({
+        message: "Leaderboard fetched successfully",
+        leaderboard,
+    });
+});
+
+export const getRewards = catchErrors(async (req: Request, res: Response) => {
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    const { userId } = verifyAccessToken(accessToken);
+
+    const referrals = await Referral.find({ userId });
+    const totalReferrals = referrals.length;
+
+    // Example reward logic
+    const rewards = {
+        totalReferrals,
+        earnedRewards: totalReferrals * 5, // Assume $5 reward per referral
+    };
+
+    res.status(OK).json({
+        message: "Rewards fetched successfully",
+        rewards,
+    });
+});

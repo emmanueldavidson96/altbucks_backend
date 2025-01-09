@@ -1,23 +1,23 @@
 import express, { Router } from "express";
 import {
-  shareReferralHandler,
-  createReferralHandler,
-  generateReferralCodeHandler,
-  fetchReferralsHandler,
-  trackReferralsHandler,
-  getLeaderboardHandler,
-  getRewardsHandler,
+  shareReferral,
+  createReferral,
+  generateReferralCode,
+  fetchReferrals,
+  trackReferrals,
+  getLeaderboard,
+  getRewards,
 } from "../controllers/referral.controller";
 
-const referralRoutes = Router();
+const router = express.Router();
 
 // Prefix: /referrals
-referralRoutes.post("/share", shareReferralHandler);
-referralRoutes.post("/", createReferralHandler);
-referralRoutes.post("/generate-code", generateReferralCodeHandler);
-referralRoutes.get("/", fetchReferralsHandler); // Example: GET /referrals?search=...&sortBy=...
-referralRoutes.get("/:userId", trackReferralsHandler); // Example: GET /referrals/:userId
-referralRoutes.get("/leaderboard", getLeaderboardHandler);
-referralRoutes.get("/rewards/:userId", getRewardsHandler);
+router.post("/share", shareReferral);
+router.post("/", createReferral);
+router.post("/generate-code", generateReferralCode);
+router.get("/", fetchReferrals); // Example: GET /referrals?search=...&sortBy=...
+router.get("/:userId", trackReferrals); // Example: GET /referrals/:userId
+router.get("/leaderboard", getLeaderboard);
+router.get("/rewards/:userId", getRewards);
 
-export default referralRoutes;
+export default router;
