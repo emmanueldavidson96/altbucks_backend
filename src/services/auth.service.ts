@@ -7,7 +7,8 @@ import VerificationCodeModel from "../models/VerificationCode.model";
 import appAssert from "../utils/appAssert";
 import { oneYearFromNow } from "../utils/date";
 import jwt from "jsonwebtoken";
-import { refreshTokenSignOptions, signToken } from "../utils/jwt";
+import { refreshTokenSignOptions, signToken, verifyToken} from "../utils/jwt";
+
 
 export type CreateAccountParams = {
     email:string;
@@ -46,6 +47,7 @@ export const createAccount = async (data:CreateAccountParams) => {
         userId,
         userAgent:data.userAgent
     })
+ 
 
     //sign access token & refresh token
     const refreshToken = signToken(
@@ -80,7 +82,7 @@ export const loginUser = async ({email, password, userAgent}:LoginParams) => {
     const user = await UserModel.findOne({email});
     appAssert(user, UNAUTHORISED, "Invalid email or password")
     //validate password from the request
-    const isValid = user.comparePassword(password)
+    const isValid = await user.comparePassword(password) // Bug fixed. Ensured password validation is asynchronous
     appAssert(isValid, UNAUTHORISED, "Invalid email or password");
 
     const userId = user._id;

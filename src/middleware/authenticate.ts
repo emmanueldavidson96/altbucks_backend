@@ -1,30 +1,43 @@
 import { Request, Response, NextFunction } from "express";  
 import { AccessTokenPayload, verifyToken } from "../utils/jwt";
-import { UNAUTHORISED } from "../constants/http";
-
+import { UNAUTHORISED, FORBIDDEN } from "../constants/http";
+import jwt from 'jsonwebtoken';
 
 
 declare global {
     namespace Express {
         interface Request {
-            user?: AccessTokenPayload;  // Attach the AccessTokenPayload type to user
+            user?: { userId: string; email: string }; // Modify this type to match your decoded token's structure
         }
     }
 }
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
-// Authentication middleware to verify the JWT token
-export const authenticate =  (request: Request, response: Response, next: NextFunction) => {
-    const token = request.cookies.accessToken;
+export const authenticate = (req: Request, res: Response, next: NextFunction)  => {
+    
+    const authHeader = req.headers['authorization'];
 
+    if (!authHeader) {
+        return res.status(UNAUTHORISED).json({ message: 'Authorization header missing' });
+    }
+
+
+    const token = authHeader.split(' ')[1];  
     if (!token) {
-        return response.status(UNAUTHORISED).json({ message: "Please Login" });
-    }
-    const { payload, error } = verifyToken<AccessTokenPayload>(token);
-
-    if (error) {
-        return response.status(401).json({ message: "Invalid or expired token" }); 
+        return res.status(UNAUTHORISED).json({ message: 'Token missing' });
     }
 
-    request.user = payload; 
-    next();
-}
+    try {
+       
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string; roles: string[] }; 
+
+       
+        req.user = decoded;
+
+       
+        next();
+    } catch (error) {
+        console.log(error);
+        return res.status(FORBIDDEN).json({ message: 'Invalid or expired token' });
+    }
+};

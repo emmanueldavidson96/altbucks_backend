@@ -2,15 +2,15 @@ import express from 'express';
 import { createStripeCheckoutSession, confirmPaymentSuccessController, stripeOnboardingController, handleReturnUrl, handleCreateTransfer, handleCreatePayout } from '../controllers/stripe.controller';
 import { authenticate } from "../middleware/authenticate";
 
-const router = express.Router();
+const stripeRouter = express.Router();
 
 //prefix : /api/stripe
-router.post("/create-checkout-session", authenticate, createStripeCheckoutSession);
-router.get("/payment-success", confirmPaymentSuccessController);
-router.post('/stripe-onboarding', stripeOnboardingController);
-router.get('/onboarding-complete', handleReturnUrl);
-router.get('/create-transfer', handleCreateTransfer);
-router.post('/create-payout', handleCreatePayout);
+stripeRouter.post("/create-checkout-session", createStripeCheckoutSession);
+stripeRouter.get("/payment-success", confirmPaymentSuccessController);
+stripeRouter.post('/stripe-onboarding', stripeOnboardingController);
+stripeRouter.get('/onboarding-complete', handleReturnUrl);
+stripeRouter.get('/create-transfer', handleCreateTransfer);
+stripeRouter.post('/create-payout', handleCreatePayout);
 
-export default router;
+export default stripeRouter;
 

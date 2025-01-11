@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { updateTaskCreatorWallet } from "./wallet.service";
-const stripe = new Stripe("sk_test_51QVVHVRpLXhxt61JIPWMR2nIoKNQrU85z0ISWzYsUU7a4agUEpVhb9SnEoAGoXP4TbliyaJzmILSVfu3EE6AdLmh00fcWgXvVS", {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2024-11-20.acacia',
 });
 
@@ -8,10 +8,10 @@ const stripe = new Stripe("sk_test_51QVVHVRpLXhxt61JIPWMR2nIoKNQrU85z0ISWzYsUU7a
 
 
 export const DOMAIN_ADDRESS = "http://localhost:4242";
-const BACKEND_URL = "https://6b77-102-89-68-175.ngrok-free.app";
+const BACKEND_URL = "https://1e88-102-89-68-50.ngrok-free.app";
 
 
-export const createStripeSession = async (amount: number, userId: string): Promise<Stripe.Checkout.Session | null> => {
+export const createStripeSession = async (amount: number): Promise<Stripe.Checkout.Session | null> => {
 
   if (isNaN(amount) || amount <= 0) {
     return null;
@@ -34,9 +34,9 @@ export const createStripeSession = async (amount: number, userId: string): Promi
         },
       ],
       mode: 'payment',
-      success_url: `${BACKEND_URL}/api/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${BACKEND_URL}/api/stripe/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${DOMAIN_ADDRESS}/cancel.html`,
-      metadata: { userId: userId },
+      // metadata: { userId: userId },
     });
 
     return session;
@@ -68,18 +68,18 @@ export const processPayment = async (sessionId: string) => {
 
     const session = await confirmStripeSession(sessionId);
 
-    if (!session.metadata || !session.metadata.userId) {
+    // if (!session.metadata || !session.metadata.userId) {
 
-      throw new Error("User ID not found in session metadata");
-    }
+    //   throw new Error("User ID not found in session metadata");
+    // }
 
-    const userId = session.metadata.userId;
+    // const userId = session.metadata.userId;
 
     if (session.payment_status === 'paid' && session.amount_total != null) {
 
       const amountPaid = session.amount_total / 100;
 
-      await updateTaskCreatorWallet(userId, amountPaid);
+      // await updateTaskCreatorWallet(userId, amountPaid);
 
       return { success: true, message: "Payment successful and wallet updated" };
     } else {

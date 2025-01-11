@@ -3,8 +3,8 @@ import { PaypalConfig } from "../config/PayPalConfig";
 
 const paypalClient = new Client({
     clientCredentialsAuthCredentials: {
-        oAuthClientId: PaypalConfig.clientId,
-        oAuthClientSecret: PaypalConfig.clientSecret,
+        oAuthClientId: PaypalConfig.clientId!,
+        oAuthClientSecret: PaypalConfig.clientSecret!,
     },
     timeout: 0,
     environment: Environment.Sandbox, // Use 'Environment.Live' in production

@@ -6,7 +6,7 @@ import { DOMAIN_ADDRESS, createStripeExpressAccount, createStripeAccountLink, re
 
 export const createStripeCheckoutSession = async (req: Request, res: Response) => {
   const { amount } = req.body;
-  let userId = req.user?.userId as string;
+  // let userId = req.user?.userId as string;
 
   const numericAmount = Number(amount);
 
@@ -15,12 +15,12 @@ export const createStripeCheckoutSession = async (req: Request, res: Response) =
 
   }
 
-  if (!userId) {
-    return res.status(400).send("User not authenticated.");
-  }
+  // if (!userId) {
+  //   return res.status(400).send("User not authenticated.");
+  // }
 
   try {
-    const stripeSession = await createStripeSession(numericAmount, userId);
+    const stripeSession = await createStripeSession(numericAmount);
 
     if (!stripeSession || !stripeSession.url) {
 
@@ -53,7 +53,8 @@ export const confirmPaymentSuccessController = async (req: Request, res: Respons
 
     if (paymentResult.success) {
 
-      res.redirect(303, `${DOMAIN_ADDRESS}/success.html`);
+      // res.redirect(303, `${DOMAIN_ADDRESS}/success.html`);
+      res.send("successful payment");
     } else {
       return res.status(400).send({ message: paymentResult.message });
     }

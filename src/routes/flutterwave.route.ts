@@ -1,11 +1,14 @@
 import { Router } from 'express';
-import { chargeCardController, submitPinController, submitOtpController } from '../controllers/flutterwave.controller'; // Adjust the import path
+import { chargeCardController, BankTransferController, submitPinController, submitOtpController,submitAddressController } from '../controllers/flutterwave.controller';
+import { authenticate } from "../middleware/authenticate"; 
 
-const router = Router();
+const flutterwaveRoute = Router();
 
 // //prefix : /api/flutterwave
-router.post('/charge-card', chargeCardController);
-router.post('/submit-pin', submitPinController);
-router.post('/submit-otp', submitOtpController);
+flutterwaveRoute.post('/charge-card', chargeCardController);
+flutterwaveRoute.post('/submit-pin', submitPinController);
+flutterwaveRoute.post('/submit-otp', submitOtpController);
+flutterwaveRoute.post('/submit-address', submitAddressController);
+flutterwaveRoute.post('/banktransfer', BankTransferController);
 
-export default router;
+export default flutterwaveRoute;

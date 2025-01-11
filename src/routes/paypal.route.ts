@@ -1,12 +1,12 @@
-import express from 'express';
+import { Router } from 'express';
 import { handleWithdrawal, captureOrderHandler, createOrderHandler } from "../controllers/paypal.controller";
 import { authenticate } from "../middleware/authenticate";
-const router = express.Router();
+const paypalRouter = Router();
 
 
 //prefix : /api/paypal
-router.post("/withdrawal", authenticate, handleWithdrawal);
-router.post("/orders", authenticate, createOrderHandler);
-router.post("/orders/:orderId/capture", captureOrderHandler);
+paypalRouter.post("/withdrawal", handleWithdrawal);
+paypalRouter.post("/orders", createOrderHandler);
+paypalRouter.get("/orders/capture", captureOrderHandler);
 
-export default router;
+export default paypalRouter;

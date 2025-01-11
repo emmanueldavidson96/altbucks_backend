@@ -34,7 +34,7 @@ export const getTaskCreatorWalletDetails = async (userId: string) => {
     return {
       availableBalance: wallet.availableBalance,
       totalBalanceDeposited: wallet.totalBalanceDeposited,
-      totalTaskDeductions: wallet.totalTaskDeductions,
+      // totalTaskDeductions: wallet.totalTaskDeductions,
     };
   } catch (error) {
     console.error(error);

@@ -1,6 +1,8 @@
+import axios from "axios";
 import { getCurrentToken } from "../utils/PaypalToken";
+
 import paypalClient from "../config/Paypal-client";
-import { OrdersController, ApiError, PaypalExperienceUserAction, OrderRequest, CheckoutPaymentIntent, OrderApplicationContextShippingPreference } from "@paypal/paypal-server-sdk";
+import { OrdersController, ApiError, PaypalExperienceUserAction, OrderRequest, CheckoutPaymentIntent, OrderApplicationContextShippingPreference, ShippingPreference } from "@paypal/paypal-server-sdk";
 
 
 const ordersController = new OrdersController(paypalClient);
@@ -32,7 +34,7 @@ interface PayoutResponse {
 
 export const createPayout = async (recipientEmail: string, amount: string): Promise<{
     batch_id: string;
-    total_amount: string;
+    // total_amount: string;
     batch_status: string;
     items: Array<{
         payout_item_id: string;
@@ -79,19 +81,23 @@ export const createPayout = async (recipientEmail: string, amount: string): Prom
         }
 
         const data: PayoutResponse = await response.json();
+        console.log("PayPal API Response:", data);
+
+        if (!data?.batch_header) {
+            throw new Error("Invalid response structure from PayPal API:  Missing batch_header");
+        }
 
         return {
             batch_id: data.batch_header.payout_batch_id,
-            total_amount: data.batch_header.amount.value,
             batch_status: data.batch_header.batch_status,
-            items: data.items.map(item => ({
-                payout_item_id: item.payout_item_id,
-                receiver: item.payout_item.receiver,
-                amount: item.payout_item.amount.value,
-                transaction_status: item.transaction_status,
-                note: item.payout_item.note,
-                transaction_date: item.time_processed,
-            })),
+            items: data.items?.map((item: any) => ({
+                payout_item_id: item.payout_item_id || "Unknown ID",
+                receiver: item.payout_item?.receiver || "Unknown",
+                amount: item.payout_item?.amount?.value || "0.00",
+                transaction_status: item.transaction_status || "Unknown",
+                note: item.payout_item?.note || "No note provided",
+                transaction_date: item.time_processed || "Unknown date",
+            })) || [],
         };
     } catch (error) {
         console.error(error);
@@ -100,7 +106,8 @@ export const createPayout = async (recipientEmail: string, amount: string): Prom
 };
 
 
-export async function createOrder(amount: string, currency = "USD", userId: string): Promise<any> {
+// export async function createOrder(amount: string, currency = "USD", userId: string)  {
+export async function createOrder(amount: string, currency = "USD")  {
     const orderRequest: OrderRequest = {
         intent: CheckoutPaymentIntent.Capture,
         purchaseUnits: [
@@ -131,9 +138,13 @@ export async function createOrder(amount: string, currency = "USD", userId: stri
         paymentSource: {
             paypal: {
                 experienceContext: {
-                    returnUrl: 'https://altbucks.com/complete-deposit',
+                   
+                    returnUrl:`https://2a5a-102-89-75-24.ngrok-free.app/api/paypal/orders/capture`,
+
                     cancelUrl: 'https://altbucks.com/cancel-deposit',
                     userAction: PaypalExperienceUserAction.PayNow,
+                    shippingPreference: ShippingPreference.NoShipping,
+
                 },
             },
         },
@@ -147,7 +158,7 @@ export async function createOrder(amount: string, currency = "USD", userId: stri
 
 
 
-        if (statusCode !== 201) {
+        if (statusCode !== 200) {
 
             console.error("Unexpected status code:", statusCode);
             throw new Error(`Order creation failed with status code ${statusCode}`);
@@ -174,7 +185,7 @@ export async function createOrder(amount: string, currency = "USD", userId: stri
 
 
 
-export async function captureOrder(orderId: string): Promise<any> {
+export async function captureOrder(orderId: string) {
     try {
         // request object based on the PayPal documentation
         const collect = {
@@ -199,5 +210,25 @@ export async function captureOrder(orderId: string): Promise<any> {
         throw new Error("An unexpected error occurred. Please try again later.");
     }
 }
+
+// export async function captureOrder(orderId: string) {
+//     const accessToken = await getCurrentToken();
+    
+//     try {
+//         const response = await axios({
+//             url: `${process.env.PAYPAL_BASE_URL}/v2/checkout/orders/${orderId}/capture`,
+//             method: 'post',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//                 'Authorization': `Bearer ${accessToken}`
+//             }
+//         });
+        
+//         return response.data;  // Return the payment capture result from PayPal
+//     } catch (error) {
+//         console.error('Error capturing payment:', error);
+//         throw new Error('Failed to capture payment. Please try again later.');
+//     }
+// }
 
 
