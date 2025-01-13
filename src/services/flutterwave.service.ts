@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY as string, process.env.FLW_SECRET_KEY as string);
 import { ChargeCardRequest, BankTransferRequest} from '../controllers/flutterwave.controller';
 import { getRedisClient } from '../config/redis-client';
+import { Console } from 'console';
 
 
 dotenv.config();
@@ -300,5 +301,56 @@ export const submitOtpService = async (otp: string, flw_ref: string) => {
         throw new Error(`Error in OTP validation: ${error.message}`);
     }
 };
+
+export  const payoutTransferService = async (accountBank: string, accountNumber:string, amount:number, currency:string) => {
+
+    try{
+        const payoutResponse = await flw.Transfer.initiate({
+            account_bank: accountBank,
+            account_number: accountNumber,
+            amount: amount,
+            currency: currency,
+            debit_currency: "USD"
+        })
+        console.log("payoutresponse");
+        console.log(payoutResponse);
+        if (payoutResponse.status === "success"){
+            return{
+                status: payoutResponse.status,
+                message: payoutResponse.message,
+            }
+        }else {
+            throw new Error(payoutResponse.message || "Payout initiation failed");
+
+        }
+    }catch(error){
+        console.error("Error in payoutTransferService:", error);
+        throw new Error("Error in payout. Please try again.");
+    }
+
+};
+
+export const fetchAllBankService = async (countryCode: string) => {
+    try {
+      const response = await fetch(`https://api.flutterwave.com/v3/banks/${countryCode}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.FLW_SECRET_KEY}`,
+        },
+      });
+  
+      const data = await response.json();
+      if (data.status === 'success') {
+        console.log('Banks:', data.data); 
+        return data.data;  
+      } else {
+        console.error('Error fetching banks:', data.message);
+        throw new Error(data.message); 
+      }
+    } catch (error) {
+      console.error('Error fetching banks:', error);
+      throw new Error('Failed to fetch banks. Please try again later.'); 
+    }
+  };
 
 

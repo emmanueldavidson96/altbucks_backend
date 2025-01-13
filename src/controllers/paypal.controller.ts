@@ -1,12 +1,10 @@
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import UserModel from '../models/user.model';
-import TransactionLogModel from '../models/TransactionLog';
 import { createPayout } from '../services/paypal.service';
 
 import { createOrder, captureOrder } from "../services/paypal.service";
 import { ApiError } from "@paypal/paypal-server-sdk";
-import { updateTaskCreatorWallet, updateTaskEarnerWallet } from '../services/wallet.service';
 import { any } from 'zod';
 
 
@@ -49,23 +47,7 @@ export async function handleWithdrawal(req: Request, res: Response) {
             });
         }
 
-        // wallet.availableBalance -= amount;
-        // wallet.totalBalanceWithdrawn += amount;
-        // await wallet.save();
-
-        // await updateTaskEarnerWallet(req.user?.userId as string, amount);
-
-
-        // const PayPaltransactionDate = new Date(payoutResponse.items[0].transaction_date);
-
-        // const transactionLog = new TransactionLogModel({
-        //     wallet: wallet._id,
-        //     amount: amount,
-        //     transactionType: 'debit',
-        //     transactionDate: PayPaltransactionDate,
-        //     description: `Withdrawal to ${paypalEmail}`,
-        // });
-        // await transactionLog.save();
+      
 
         return res.status(500).json({
             message: 'Payment failed. Please try again.',
@@ -134,12 +116,11 @@ export async function captureOrderHandler(req: Request, res: Response) {
         if (payment.status === "COMPLETED") {
 
 
-            // await updateTaskCreatorWallet(userId, parseFloat(amountCaptured));
+            
 
             res.status(200).json({
-                message: "Payment captured successfully and wallet updated!",
-                // paymentData: payment,
-                // updatedWallet: updatedWallet,
+                message: "Payment captured successfully",
+               
             });
         } else {
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { chargeCardService, bankTransferService, submitPinService, submitOtpService, submitAddressService  } from '../services/flutterwave.service'; 
+import { chargeCardService, bankTransferService, submitPinService, submitOtpService, submitAddressService, fetchAllBankService,payoutTransferService } from '../services/flutterwave.service'; 
 import { z } from 'zod';
 
 const ChargeCardSchema = z.object({
@@ -126,7 +126,7 @@ export const submitAddressController = async (req: Request, res: Response) => {
 
     if (!tx_ref || !city || !address || !state || !country || !zipcode) {
         return res.status(400).json({
-            error: 'Transaction reference and all address fields (city, address, state, country, zipcode) are required.',
+            message: 'Transaction reference and all address fields (city, address, state, country, zipcode) are required.',
         });
     }
 
@@ -138,3 +138,45 @@ export const submitAddressController = async (req: Request, res: Response) => {
         return res.status(500).json({ error: 'Transaction failed. Please try again.' });
     }
 };
+
+export const fetchAllBankController = async (req: Request, res: Response) => {
+    const { countryCode} = req.body;
+
+    if (!countryCode || typeof countryCode !== "string"){
+        return res.status(400).json({ error: "Country code is required" });;
+    }
+
+    try{
+        const resonse = await fetchAllBankService(countryCode);
+        return res.json({resonse});
+    }catch(error){
+        console.error(error);
+        return res.status(505).json({error})
+    }
+};
+
+
+export const payoutTransferController = async (req: Request, res: Response) => {
+  const { accountBank, accountNumber, amount, currency} = req.body;
+
+  
+  if (!accountBank || !accountNumber || !amount || !currency) {
+    return res.status(400).json({
+      message: "All fields (accountBank, accountNumber, amount, currency) are required",
+    });
+  }
+
+  try {
+    const payoutResponse = await payoutTransferService( accountBank, accountNumber, amount, currency);
+    return res.status(200).json({
+      status: "success",
+      message: payoutResponse.message,
+    });
+  } catch (error: any) {
+    console.error("Error in payoutTransferController:", error.message || error);
+    return res.status(500).json({
+      message: error.message || "Internal server error",
+    });
+  }
+};
+

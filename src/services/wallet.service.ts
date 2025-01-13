@@ -1,11 +1,11 @@
-import TaskEarnerWallet, { Wallet } from "../models/task-earner-wallet.model";
-import TaskCreatorWallet from "../models/task-creator-wallet";
-import { ITaskCreatorWallet } from "../models/task-creator-wallet";
+import Wallet  from "../models/wallet.model";
+
+
 import TransactionLogModel from '../models/TransactionLog';
 
-export const getTaskEarnerWalletDetails = async (userId: string) => {
+export const getWalletDetails = async (userId: string) => {
   try {
-    const wallet = await TaskEarnerWallet.findOne({ user: userId }).exec();
+    const wallet = await Wallet.findOne({ user: userId }).exec();
 
     if (!wallet) {
       return null;
@@ -23,35 +23,16 @@ export const getTaskEarnerWalletDetails = async (userId: string) => {
 };
 
 
-export const getTaskCreatorWalletDetails = async (userId: string) => {
+export const updateWallet = async (userId: string, amount: number) => {
   try {
-    const wallet = await TaskCreatorWallet.findOne({ user: userId }).exec();
-
-    if (!wallet) {
-      return null;
-    }
-
-    return {
-      availableBalance: wallet.availableBalance,
-      totalBalanceDeposited: wallet.totalBalanceDeposited,
-      // totalTaskDeductions: wallet.totalTaskDeductions,
-    };
-  } catch (error) {
-    console.error(error);
-    throw new Error("Error fetching wallet details");
-  }
-};
-
-export const updateTaskCreatorWallet = async (userId: string, amount: number) => {
-  try {
-    const wallet = await TaskCreatorWallet.findOne({ user: userId });
+    const wallet = await Wallet.findOne({ user: userId });
 
     if (!wallet) {
       throw new Error("Task creator wallet not found.");
     }
 
     wallet.availableBalance += amount;
-    wallet.totalBalanceDeposited += amount;
+    wallet. totalBalanceWithdrawn+= amount;
 
     await wallet.save();
 
@@ -74,20 +55,6 @@ export const updateTaskCreatorWallet = async (userId: string, amount: number) =>
   }
 };
 
-export const updateTaskEarnerWallet = async (userId: string, amount: number): Promise<Wallet> => {
-  const wallet = await TaskEarnerWallet.findOne({ userId });
-
-  if (!wallet) {
-    throw new Error("Task earner wallet not found.");
-  }
-
-  wallet.availableBalance -= amount;
-  wallet.totalBalanceWithdrawn += amount;
-
-  await wallet.save();
-
-  return wallet.toObject();
-};
 
 
 
