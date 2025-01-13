@@ -1,48 +1,67 @@
+
+
 import mongoose from "mongoose";
 
-export interface ReferralDocument extends mongoose.Document {
-    userId: mongoose.Types.ObjectId;
-    referralLink:string;
-    qrCode:string;
-    referredBy:string;
-    rewardPoints:Number;
-    rewardCount:Number;
-    createdAt:Date;
-    taskActivities: mongoose.Types.ObjectId[]; 
+export interface ReferralActivity {
+    referredUser: mongoose.Types.ObjectId; // User who was referred
+    status: "pending" | "active" | "completed"; // Status of the referral
+    createdAt: Date; // When the referral was made
+    activatedAt?: Date; // When the referral was activated
 }
 
-const referralSchema = new mongoose.Schema<ReferralDocument>({
-    userId: {
-        ref: "User",
-        type: mongoose.Schema.Types.ObjectId,
-        index:true
+export interface ReferralDocument extends mongoose.Document {
+    user: mongoose.Types.ObjectId; // User who owns the referral
+    qrCode: string; // Referral code
+    activities: ReferralActivity[]; // List of referral activities
+    rewardPoints: number; // Total reward points
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const referralActivitySchema = new mongoose.Schema<ReferralActivity>(
+    {
+        referredUser: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+        status: {
+            type: String,
+            enum: ["pending", "active", "completed"],
+            default: "pending",
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+        },
+        activatedAt: {
+            type: Date,
+        },
     },
-    referralLink:{
-        type:String,
+    { _id: false } // Disable automatic ID for embedded documents
+);
+
+const referralSchema = new mongoose.Schema<ReferralDocument>(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            unique: true,
+        },
+        qrCode: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+        activities: [referralActivitySchema],
+        rewardPoints: {
+            type: Number,
+            default: 0,
+        },
     },
-    qrCode:{
-      type:String,
-    },
-    referredBy:{
-      type:String,
-    },
-    rewardPoints:{
-      type:Number,
-    },
-    rewardCount:{
-      type:Number,
-    },
-    createdAt:{
-      type:Date,
-      required:true,
-      default:Date.now,
-    },
-    taskActivities: [{
-      type:mongoose.Schema.Types.ObjectId,
-      ref: "TaskActivity" 
-    }],    // Reference to TaskActiviy
-    
-});
+    { timestamps: true }
+);
 
 const Referral = mongoose.model<ReferralDocument>("Referral", referralSchema);
 export default Referral;

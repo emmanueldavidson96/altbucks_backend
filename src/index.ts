@@ -51,7 +51,7 @@ app.get("/", (request:Request, response:Response, next:NextFunction)=> {
     // }
 
 app.use("/auth", authRoutes);
-app.use("/api/referrals", router);
+app.use("/referral", router);
 
 //Error Handler Middleware
 app.use(errorHandler);

@@ -2,15 +2,9 @@ import mongoose, { Types } from "mongoose";
 import { compareValue, hashValue } from "../utils/bcrypt";
 
 export interface UserDocument extends mongoose.Document {
-    _id: Types.ObjectId;
     email:string,
-    username:string,
     password:string,
     verified:boolean,
-    qrCode: string,
-    referredBy:string,
-    rewardPoints:Number,
-    rewardCount:Number,
     createdAt:Date,
     updatedAt:Date,
     __v?:number,
@@ -19,11 +13,6 @@ export interface UserDocument extends mongoose.Document {
 }
 
 const userSchema = new mongoose.Schema<UserDocument>({
-    username:{
-        type:String,
-        unique:true,
-        required:true,
-    },
     email:{
         type:String,
         unique:true,
@@ -39,24 +28,6 @@ const userSchema = new mongoose.Schema<UserDocument>({
         required:true,
         default:false
     },
-    qrCode:{
-        type:String,
-        unique:true,
-        default:null,
-      },
-      referredBy:{
-        type:String,
-        defaukt:null,
-      },
-      rewardPoints:{
-        type:Number,
-        default:0,
-      },
-      rewardCount:{
-        type:Number,
-        default:0,
-      },
-
 },{
     timestamps:true,
 })

@@ -6,17 +6,22 @@ import { loginSchema, registerSchema } from "./auth.schemas";
 import { AccessTokenPayload, verifyToken } from "../utils/jwt";
 import SessionModel from "../models/session.model";
 import appAssert from "../utils/appAssert";
+import User from "../models/user.model";
 
 
 
 
 export const registerHandler = catchErrors(
     async (request, response) => {
+        console.log("Incoming Request Body: ", request.body);
+
         //validate request
         const validatedData = registerSchema.parse({
             ...request.body,
             userAgent:request.headers["user-agent"],
         });
+
+        console.log("Validated Data: ", validatedData)
 
         //call service
         const {user, accessToken, refreshToken} = await createAccount(validatedData)
@@ -29,14 +34,31 @@ export const registerHandler = catchErrors(
 )
 
 export const loginHandler = catchErrors(async (request, response) => {
+    const { email, password } = request.body;
+
     const requested = loginSchema.parse({
         ...request.body,
         userAgent:request.headers["user-agent"]
     });
+
+    const user = await User.findOne( {email});
+    if (!user) {
+        return response.status(400).json({ message:
+            "Invalid Credentials"
+        });
+    }
+
+
     const {accessToken, refreshToken} = await loginUser(requested)
     return setAuthCookies({response, accessToken, refreshToken}).status(OK).json({
-        message:"Login successful"
-    })
+        message:"Login successful",
+        user: {
+            id: user._id,
+            email: user.email,
+            verified: user.verified,
+        },
+        accessToken, refreshToken,
+    });
 })
 
 export const refreshHandler = catchErrors(async ( request, response) => {
