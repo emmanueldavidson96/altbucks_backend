@@ -1,22 +1,21 @@
 import express, { Router } from "express";
+import { verifyAccessToken } from "../middleware/auth.middleware";
 import {
-  generateReferralCode,
-  trackReferrals,
-  getRewards,
-  addReferralActivity,
-  updateReferralActivity,
-  getReferralActivities,
-
+  generateReferralCodeController,
+  trackReferralsController,
+  getReferralDetailsController,
+  updateReferralActivityController,
+  getRewardsController,
 } from "../controllers/referral.controller";
+import catchErrors from "../utils/catchErrors";
 
 const router = express.Router();
 
-// Prefix: /referrals
-router.post("/generate", generateReferralCode);
-router.get("/:userId", trackReferrals); // Example: GET /referrals/:userId
-router.get("/rewards/:userId", getRewards);
-router.post("/activity", addReferralActivity); // Add new activity
-router.patch("/activity", updateReferralActivity); // Update activity status
-router.get("/activities", getReferralActivities); // Get all activities
+
+router.post("/generate", catchErrors(verifyAccessToken), generateReferralCodeController);
+router.post("/track", catchErrors(verifyAccessToken), trackReferralsController);
+router.get("/:referralCode", catchErrors(verifyAccessToken), getReferralDetailsController);
+router.put("/activity", catchErrors(verifyAccessToken), updateReferralActivityController);
+router.get("/rewards", catchErrors(verifyAccessToken), getRewardsController);
 
 export default router;
