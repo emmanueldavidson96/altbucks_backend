@@ -9,9 +9,9 @@ import catchErrors from "./utils/catchErrors";
 import { OK } from "./constants/http";
 import authRoutes from "./routes/auth.route";
 import paypalRouter from "./routes/paypal.route";
-import flutterwaveRoute from "./routes/flutterwave.route";
-import stripeRouter from "./routes/stripe.route";
-import webhookRoutes from "./routes/flutterwavewebhook.route";
+// import flutterwaveRoute from "./routes/flutterwave.route";
+// import stripeRouter from "./routes/stripe.route";
+// import webhookRoutes from "./routes/flutterwavewebhook.route";
 
 //Application Middlewares
 const app = express();
@@ -43,10 +43,10 @@ app.get("/", (request:Request, response:Response, next:NextFunction)=> {
 
 app.use("/auth", authRoutes)
 app.use("/api/paypal", paypalRouter); 
-app.use("/api/flutterwave", flutterwaveRoute);
-app.use("/api/stripe", stripeRouter);
+// app.use("/api/flutterwave", flutterwaveRoute);
+// app.use("/api/stripe", stripeRouter);
 
-app.use("/api", webhookRoutes);
+// app.use("/api", webhookRoutes);
 
 
 //Error Handler Middleware
