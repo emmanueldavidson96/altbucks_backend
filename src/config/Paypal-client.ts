@@ -10,8 +10,8 @@ const paypalClient = new Client({
     environment: Environment.Sandbox, // Use 'Environment.Live' in production
     logging: {
         logLevel: LogLevel.Info,
-        logRequest: { logBody: true },
-        logResponse: { logHeaders: true },
+        logRequest: { logBody: false },
+        logResponse: { logHeaders: false },
     },
 });
 

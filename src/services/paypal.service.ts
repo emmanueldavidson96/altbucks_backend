@@ -81,7 +81,7 @@ export const createPayout = async (recipientEmail: string, amount: string): Prom
         }
 
         const data: PayoutResponse = await response.json();
-        console.log("PayPal API Response:", data);
+        // console.log("PayPal API Response:", data);
 
         if (!data?.batch_header) {
             throw new Error("Invalid response structure from PayPal API:  Missing batch_header");
@@ -105,8 +105,6 @@ export const createPayout = async (recipientEmail: string, amount: string): Prom
     }
 };
 
-
-// export async function createOrder(amount: string, currency = "USD", userId: string)  {
 export async function createOrder(amount: string, currency = "USD")  {
     const orderRequest: OrderRequest = {
         intent: CheckoutPaymentIntent.Capture,
@@ -164,7 +162,7 @@ export async function createOrder(amount: string, currency = "USD")  {
             throw new Error(`Order creation failed with status code ${statusCode}`);
         }
 
-        console.log("Order Created Successfully:", result);
+        // console.log("Order Created Successfully:", result);
 
         return result;
     } catch (error) {
@@ -196,6 +194,7 @@ export async function captureOrder(orderId: string) {
         const { result, ...httpResponse } = await ordersController.ordersCapture(collect);
 
         console.log("Response Status Code:", httpResponse.statusCode);
+        console.log("Result:", result);
 
         return result;
     } catch (error) {
@@ -210,25 +209,4 @@ export async function captureOrder(orderId: string) {
         throw new Error("An unexpected error occurred. Please try again later.");
     }
 }
-
-// export async function captureOrder(orderId: string) {
-//     const accessToken = await getCurrentToken();
-    
-//     try {
-//         const response = await axios({
-//             url: `${process.env.PAYPAL_BASE_URL}/v2/checkout/orders/${orderId}/capture`,
-//             method: 'post',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Authorization': `Bearer ${accessToken}`
-//             }
-//         });
-        
-//         return response.data;  // Return the payment capture result from PayPal
-//     } catch (error) {
-//         console.error('Error capturing payment:', error);
-//         throw new Error('Failed to capture payment. Please try again later.');
-//     }
-// }
-
 
